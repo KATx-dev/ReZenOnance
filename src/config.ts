@@ -45,7 +45,7 @@ export function loadConfig(): Config {
     lastBabeBaseUrl: process.env.LASTBABE_BASE_URL ?? 'https://lastbabe.velixir.run',
     monochromeBaseUrl: process.env.MONOCHROME_BASE_URL ?? 'https://tracks.monochrome.st',
     deezerBaseUrl: process.env.DEEZER_BASE_URL ?? 'https://dzr.tabs-vs-spaces.wtf',
-    eljohnzcBaseUrl: process.env.ELJOHNZC_BASE_URL ?? 'https://eljohnzc-addon.de.deplexo.com/4433c7caff7fd070309e',
+    eljohnzcBaseUrl: process.env.ELJOHNZC_BASE_URL ?? 'https://eljohnzc-addon.de.deplexo.com/59efe06a96',
     instableBaseUrl: process.env.INSTABLE_BASE_URL ?? 'https://instable.arcod.xyz',
   };
 }
