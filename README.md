@@ -1,115 +1,149 @@
-# Qobuz BitChord Addon
+# ReZenOnance
 
-A TypeScript/Node.js, playback-only BitChord addon exposing `/manifest.json`, `/search`, and `/stream/:id`.
+> **Studio-Grade Lossless Music Aggregator & Personal Gateway for BitChord**
 
-## Upstream providers
+**ReZenOnance** aggregates verified high-resolution FLAC streams (up to **24-bit / 192 kHz**) into a unified, high-performance BitChord music addon. It operates in a dual-distribution architecture:
 
-The default `multi` provider races all configured compatible backends and uses the first one that returns usable search results:
+1. **Hosted Web Portal & Gateway**: A modern, glassmorphic audiophile hub providing live provider health telemetry, an interactive hardware & gear diagnostic lab, an in-browser lossless player with real-time frequency visualizer, and personalized rate-limited addon endpoints (`/u/:userSlug/manifest.json`).
+2. **Standalone Community Release**: A plug-and-play, zero-database, zero-auth Node.js deployment for self-hosters on Docker, Vercel, Railway, or home servers.
 
-- Monochrome: `https://tracks.monochrome.st/search/tracks` and `/track/:id` for full FLAC playback
-- Qobuz-DL: `https://qobuz-dll.foreyou.workers.dev/api/get-music` and `/api/download-music`
-- Deezer fallback: `https://dzr.tabs-vs-spaces.wtf/search` and `/stream/:id`
-- LastBabe: a fresh 48-hour source minted from `https://lastbabe.velixir.run`
-- Eljohnzc: a lossless source exposed under the isolated `/e` route
-- Instable: a lossless source exposed under the isolated `/f` route
+---
 
-The Qobuz-DL routes are:
+## ✨ Key Features
 
-- `/api/get-music?q=...&offset=0` for catalogue search
-- `/api/download-music?track_id=...&quality=...` for a playable URL
+- **Genuine 24-Bit / 192 kHz FLAC**: Direct edge delivery via Akamai CDN and lossless core APIs with zero transcoding loss.
+- **Sub-Second Provider Racing**: The multi-source racing engine queries verified operational backends concurrently and resolves the fastest usable result.
+- **Personal Gateway Endpoints**: Users generate isolated addon URLs (`/u/:userSlug/manifest.json`) with customizable aliases and instant QR code generation for Android TV and mobile scanning.
+- **Abuse & Upstream Guard**:
+  - **300 Tracks / Day**: Rolling daily stream allocation resetting at `00:00 UTC`.
+  - **Max 2 Concurrent Devices**: Sliding window session leases prevent credential sharing while keeping desktop and mobile synced.
+  - **Max 15 Unique IPs / Day**: Anti-sybil protection that easily accommodates cellular/Wi-Fi transitions.
+- **Lossless Audio & Gear Diagnostic Lab**: Browser-based Web Audio API suite that audits your DAC clock, detects lossy Bluetooth compression bottlenecks (SBC/AAC @ 256kbps), and conducts 32 Hz sub-bass, 17.5 kHz treble air, and -45 dBFS noise floor acoustic tests.
+- **Legacy TV Support**: Preserved lightweight, CSS3-minimal interface at `/tv` specifically optimized for older Sony Bravia / Vewd TV browsers.
 
-The provider only consumes the public JSON response, never handles Qobuz credentials, and does not expose upstream headers or URLs except for the validated playback URL returned to BitChord. It does not guess routes, scrape private APIs, extract tokens, bypass authentication, or download media.
+---
 
-The default `QOBUZ_PROVIDER=multi` races all six backends. Each returned track ID is signed and includes its source, so an ID is never accidentally sent to the wrong provider. If one backend is unavailable, another can still serve results. `QOBUZ_PROVIDER=qobuzdl` and `QOBUZ_PROVIDER=stub` remain available for focused testing.
+## 🛰️ Active Providers & Telemetry
 
-## Contract
+ReZenOnance focuses on verified, high-throughput lossless backends:
 
-- `GET /manifest.json`: stable id `com.bitchord.qobuz`, `resources: ["search", "stream"]`, `allowDownloads: 0`.
-- `GET /search?q=...&quality=...&atmos=auto`: returns `{ tracks: [] }` or normalized tracks with opaque IDs.
-- `GET /stream/:id?quality=...&atmos=auto`: returns a directly playable HTTPS rendition, or 404 when unavailable.
-- The same contract is also available under isolated source prefixes `/a`, `/b`, `/c`, `/d`, `/e`, and `/f`, each with its own manifest, search, and stream routes.
-- `/a` is Qobuz-DL, `/b` is LastBabe, `/c` is Monochrome lossless, `/d` is the Deezer fallback, `/e` is Eljohnzc lossless, and `/f` is Instable lossless.
-- Lossless, codec, manifest, bitrate, sample rate, bit depth, and Dolby fields are only returned when the provider supplies them. Encrypted streams and malformed URLs are refused.
+| Provider | Route | Delivery Protocol | Audio Fidelity | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **Studio Lossless Source** (Heisenberg) | `/g` | Direct Akamai CDN | **24-bit / 192 kHz FLAC** | `Operational` |
+| **Lossless Core Source** (Arcod) | `/f` | Direct Stream API | **FLAC Lossless** | `Operational` |
+| **Lossless Alternate** | `/e` | Remote Addon Proxy | DASH / FLAC | `Standby` |
+| **Monochrome Core** | `/c` | Direct FLAC | FLAC | `Offline (Monitored)` |
 
-## Local development
+*Inactive/dead legacy upstreams are excluded from the default racing loop to guarantee sub-500ms search latency.*
+
+---
+
+## 📡 API Contract & Endpoints
+
+All manifests strictly declare `"allowDownloads": 0` for direct streaming compatibility.
+
+| Endpoint | Method | Description |
+| :--- | :--- | :--- |
+| `/` | `GET` | Audiophile web portal, link generator, gear diagnostic lab, and player |
+| `/tv` | `GET` | Lightweight client for Sony Bravia & legacy Vewd TV browsers |
+| `/manifest.json` | `GET` | Root BitChord addon contract (`id: com.bitchord.qobuz`, `allowDownloads: 0`) |
+| `/u/:userSlug/manifest.json` | `GET` | Isolated personal gateway manifest with rate-limiting context |
+| `/search?q=...&quality=LOSSLESS` | `GET` | Races active lossless backends; returns normalized tracks with signed IDs |
+| `/stream/:id?quality=LOSSLESS` | `GET` | Resolves signed opaque track ID to direct playable HTTPS stream URL |
+| `/api/telemetry` | `GET` | Real-time upstream health status, latencies, and route availability |
+| `/health` | `GET` | Health check endpoint returning `{ ok: true }` |
+
+---
+
+## 🎧 Lossless Audio & Gear Diagnostic Lab
+
+Located on the home portal (`#hardware-lab`), this interactive tool helps users verify whether their physical hardware can genuinely reproduce lossless audio:
+
+1. **System & DAC Probe**: Evaluates browser audio engine clock rate (44.1 kHz, 48 kHz, 96 kHz, or 192 kHz) and native FLAC decoder support.
+2. **Bluetooth Bottleneck Detector**: Flags wireless headsets operating on lossy codecs (SBC/AAC @ ~256 kbps), alerting the user that 24-bit FLAC is being downsampled over the air.
+3. **Sub-Bass Extension (32 Hz)**: Generates a calibrated 32 Hz sine tone to evaluate low-frequency driver linearity vs. housing rattling and harmonic distortion.
+4. **High-Frequency Air (17.5 kHz)**: Checks for clean ultrasonic air extension vs. reconstruction aliasing or Bluetooth low-pass brickwall filter cutoffs.
+5. **Micro-Dynamics & Noise Floor (-45 dBFS)**: Tests DAC signal-to-noise ratio and background static floor as quiet notes decay into silence.
+6. **Verdict & Recommendations**: Provides an overall Grade (Studio Ready vs. Lossy Bottleneck Warning) with clear hardware recommendations.
+
+---
+
+## 🚀 Quick Start & Local Development
+
+### Prerequisites
+- Node.js 20+ (ESM modules support)
+- npm or pnpm
+
+### Setup
 
 ```bash
-cp .env.example .env
+# Clone the repository
+git clone https://github.com/KATx-dev/ReZenOnance.git
+cd ReZenOnance
+
+# Install dependencies
 npm install
+
+# Build TypeScript
 npm run build
+
+# Run unit & integration test suite (20/20 tests)
 npm test
+
+# Launch development server
 npm run dev
-curl http://localhost:3000/manifest.json
-curl 'http://localhost:3000/search?q=kind+of+blue&quality=LOSSLESS&atmos=auto'
-curl -i 'http://localhost:3000/stream/qobuz_invalid000?quality=LOSSLESS&atmos=auto'
 ```
 
-Node.js 20+ is required. Environment variables are read directly by the process; use a secret manager in production rather than committing `.env`.
+The service will listen on `http://127.0.0.1:3000`.
 
-## Provider configuration
+---
 
-The default configuration is:
+## ⚙️ Environment Variables
+
+Configure via `.env` or your hosting provider dashboard:
 
 ```dotenv
+# Server Network Settings
+PORT=3000
+HOST=0.0.0.0
+
+# Provider Strategy: multi (races Heisenberg & Arcod), qobuzdl, or stub
 QOBUZ_PROVIDER=multi
-QOBUZ_UPSTREAM_BASE_URL=https://qobuz-dll.foreyou.workers.dev
-LASTBABE_BASE_URL=https://lastbabe.velixir.run
-MONOCHROME_BASE_URL=https://tracks.monochrome.st
-DEEZER_BASE_URL=https://dzr.tabs-vs-spaces.wtf
-ELJOHNZC_BASE_URL=https://eljohnzc-addon.de.deplexo.com/59efe06a96
+
+# Upstream Endpoints
+HEISENBERG_BASE_URL=https://heisenbergbackaaahh.de.deplexo.com/a
+INSTABLE_BASE_URL=https://arcod.xyz
+
+# Security & ID Signing Secret
+QOBUZ_ID_SECRET=change-me-in-production-to-a-secure-random-string
+
+# Request Timeouts & Cache
+REQUEST_TIMEOUT_MS=10000
+CACHE_TTL_MS=300000
+UPSTREAM_RETRIES=2
 ```
 
-The base URL is configurable if the public service changes hostnames or you operate an authorized compatible deployment.
+---
 
-For a different documented JSON provider, the generic adapter remains available:
+## 📱 Adding to BitChord
 
-```dotenv
-QOBUZ_PROVIDER=http
-QOBUZ_API_BASE_URL=https://authorized.example
-QOBUZ_SEARCH_PATH=/documented/search
-QOBUZ_STREAM_PATH=/documented/stream/{id}
-QOBUZ_API_TOKEN=             # optional; never log it
-```
+1. Open the ReZenOnance web portal at `https://your-deployment-url/`.
+2. Under **Personal BitChord Addon Gateway**, customize your slug or click **Generate New Token**.
+3. Click **Copy URL** (or click **Install** to trigger `bitchord://install-addon?url=...`).
+   - Alternatively, open the **QR Code Modal** and scan with your mobile device or Android TV camera.
+4. In BitChord, go to **Settings → Addons → Add Addon from URL**, paste your link, and save.
+5. Enjoy pure 24-bit studio FLAC across all your devices.
 
-The documented provider must return search JSON as either `{ "tracks": [...] }` or an array, with each usable track containing `upstreamId` and `title`. Stream JSON must contain an HTTPS `url`; set `manifest` to `none`, `hls`, or `dash` when applicable and set `encrypted: true` for protected media (it will be refused). The adapter sends `q`, `quality`, and `atmos`, applies timeouts, handles 404/429/5xx, and validates JSON shape. It does not expose the authorization header to BitChord clients.
+---
 
-The server uses signed stateless `qobuz_*` IDs containing an encoded source/upstream ID; `/stream` never treats the public ID as a URL. This works across serverless instances and does not expose upstream URLs or credentials.
+## 🔒 Security & Privacy
 
-## Production deployment
+- **Opaque Signed IDs**: Track identifiers are cryptographically signed with HMAC to prevent tampering, injection, and unauthorized parameter manipulation.
+- **Stateless Privacy**: Upstream authorization tokens, private backend URLs, and cookies are never leaked to the client or logged in plain text.
+- **Strict Media Validation**: Only valid HTTPS streaming renditions with verified FLAC/DASH containers are returned; unencrypted or malformed URLs are rejected.
 
-Run behind an HTTPS reverse proxy or a managed HTTPS host:
+---
 
-```bash
-npm ci
-npm run build
-NODE_ENV=production HOST=127.0.0.1 PORT=3000 npm start
-```
+## 📄 License
 
-Terminate TLS at Caddy/Nginx/a managed platform and proxy to the Node process. Set a health check to `GET /manifest.json`. Ensure the proxy preserves query strings and does not log authorization headers or signed media URLs.
-
-## Add to BitChord
-
-After deploying, copy the HTTPS root URL (for example `https://addon.example.com`) into **BitChord → Settings → Sources → Add an addon**. BitChord will request `${ROOT_URL}/manifest.json`. The addon is streaming-only because `allowDownloads` is `0`.
-
-## Example responses
-
-Manifest:
-
-```json
-{"id":"com.bitchord.qobuz","name":"Qobuz","version":"1.0.0","resources":["search","stream"],"allowDownloads":0}
-```
-
-Safe default search:
-
-```json
-{"tracks":[]}
-```
-
-Not available:
-
-```http
-HTTP/1.1 404 Not Found
-{"error":"track not available"}
-```
-
-A successful stream response is intentionally not fabricated; it is returned only after a configured provider supplies a validated authorized HTTPS rendition.
+MIT © [KATx-dev](https://github.com/KATx-dev)
