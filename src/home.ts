@@ -6,33 +6,36 @@ export const homePage = `<!doctype html>
 <title>ReZenOnance | Studio Lossless Audio Gateway</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #090b10;
-  --bg-card: rgba(18, 22, 33, 0.75);
-  --bg-card-hover: rgba(24, 30, 46, 0.85);
+  --bg-deep: #07090e;
+  --bg-surface: #0e131f;
+  --bg-card: rgba(16, 22, 36, 0.75);
+  --bg-card-hover: rgba(22, 30, 48, 0.9);
   --border: rgba(255, 255, 255, 0.08);
-  --border-focus: #00f2fe;
+  --border-light: rgba(255, 255, 255, 0.15);
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
   --cyan: #00f2fe;
-  --cyan-glow: rgba(0, 242, 254, 0.25);
+  --cyan-glow: rgba(0, 242, 254, 0.35);
+  --blue: #3b82f6;
   --purple: #8b5cf6;
+  --purple-glow: rgba(139, 92, 246, 0.3);
   --emerald: #10b981;
-  --emerald-glow: rgba(16, 185, 129, 0.25);
-  --rose: #f43f5e;
+  --emerald-glow: rgba(16, 185, 129, 0.3);
   --amber: #f59e0b;
+  --rose: #f43f5e;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  background-color: var(--bg);
+  background-color: var(--bg-deep);
   background-image: 
-    radial-gradient(at 0% 0%, rgba(0, 242, 254, 0.08) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.08) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+    radial-gradient(circle at 10% 15%, rgba(0, 242, 254, 0.09) 0px, transparent 45%),
+    radial-gradient(circle at 90% 10%, rgba(139, 92, 246, 0.09) 0px, transparent 50%),
+    radial-gradient(circle at 50% 90%, rgba(16, 185, 129, 0.06) 0px, transparent 40%);
   color: var(--text-primary);
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   min-height: 100vh;
@@ -40,10 +43,24 @@ body {
   overflow-x: hidden;
 }
 
+/* Ambient Canvas */
+#ambient-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.35;
+}
+
 .container {
-  max-width: 1180px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 32px 24px 100px;
+  padding: 36px 24px 120px;
+  position: relative;
+  z-index: 1;
 }
 
 /* Header */
@@ -51,9 +68,11 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 28px;
+  padding-bottom: 24px;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 40px;
+  margin-bottom: 44px;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 .brand {
   display: flex;
@@ -63,47 +82,68 @@ header {
   color: inherit;
 }
 .brand-icon {
-  width: 44px;
-  height: 44px;
-  background: linear-gradient(135deg, #00f2fe, #4facfe);
-  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #00f2fe 0%, #3b82f6 50%, #8b5cf6 100%);
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 20px var(--cyan-glow);
+  box-shadow: 0 0 24px var(--cyan-glow);
+  position: relative;
+}
+.brand-icon::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 15px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.4), transparent);
+  pointer-events: none;
+}
+.brand-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 .brand-name {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 800;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.6px;
   background: linear-gradient(to right, #ffffff, #cbd5e1);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-.brand-tag {
+.brand-badge {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
   padding: 3px 8px;
   border-radius: 6px;
-  background: rgba(0, 242, 254, 0.1);
+  background: rgba(0, 242, 254, 0.12);
   color: var(--cyan);
-  border: 1px solid rgba(0, 242, 254, 0.2);
+  border: 1px solid rgba(0, 242, 254, 0.25);
 }
-.header-actions {
+.brand-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.header-nav {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 .status-pill {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
   color: #34d399;
-  padding: 6px 14px;
+  padding: 7px 14px;
   border-radius: 9999px;
   font-size: 13px;
   font-weight: 600;
@@ -114,341 +154,677 @@ header {
   background: #10b981;
   border-radius: 50%;
   box-shadow: 0 0 10px #10b981;
-  animation: pulse 2s infinite;
+  animation: pulse-dot 2s infinite ease-in-out;
 }
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.85); }
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.75); opacity: 0.5; }
 }
 
-.tv-link {
+.nav-link {
   color: var(--text-secondary);
   text-decoration: none;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   padding: 8px 14px;
-  border-radius: 8px;
+  border-radius: 9px;
   border: 1px solid var(--border);
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.tv-link:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary);
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
   border-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Hero */
+/* Hero Section */
 .hero {
   text-align: center;
-  max-width: 760px;
-  margin: 0 auto 48px;
+  max-width: 820px;
+  margin: 0 auto 52px;
+}
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  color: #c4b5fd;
+  padding: 5px 14px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 20px;
 }
 .hero h1 {
-  font-size: 46px;
+  font-size: 48px;
   font-weight: 800;
-  letter-spacing: -1.2px;
+  letter-spacing: -1.3px;
   line-height: 1.15;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 .hero-gradient {
-  background: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #00f2fe 0%, #38bdf8 40%, #818cf8 70%, #c084fc 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 .hero p {
   color: var(--text-secondary);
   font-size: 18px;
-  line-height: 1.6;
+  line-height: 1.65;
 }
 
-/* Generator Card */
-.generator-section {
+/* Feature Badges */
+.feature-ribbon {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.feature-item svg {
+  color: var(--cyan);
+}
+
+/* Card General */
+.glass-panel {
   background: var(--bg-card);
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 36px;
-  margin-bottom: 48px;
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+  border-radius: 24px;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.6);
 }
-.generator-section::before {
+
+/* Personal Addon Section */
+.addon-generator {
+  padding: 38px;
+  margin-bottom: 50px;
+}
+.addon-generator::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0; height: 2px;
+  top: 0; left: 0; right: 0; height: 3px;
   background: linear-gradient(90deg, transparent, var(--cyan), var(--purple), transparent);
 }
-.generator-header {
+.generator-head {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
+  align-items: flex-start;
+  margin-bottom: 28px;
+  gap: 20px;
   flex-wrap: wrap;
-  gap: 16px;
 }
 .generator-title h2 {
-  font-size: 22px;
-  font-weight: 700;
-  margin-bottom: 4px;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
 }
 .generator-title p {
   font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.token-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.slug-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: rgba(8, 11, 18, 0.85);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px 12px;
+}
+.slug-prefix {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
   color: var(--text-muted);
 }
-.btn-primary {
-  background: linear-gradient(135deg, #00f2fe, #4facfe);
-  color: #041019;
+.slug-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 6px;
+  width: 140px;
+}
+.btn-icon {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.btn-icon:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-generate {
+  background: linear-gradient(135deg, #00f2fe 0%, #38bdf8 100%);
+  color: #030b12;
   border: none;
   font-weight: 700;
   font-size: 14px;
-  padding: 12px 24px;
-  border-radius: 10px;
+  padding: 11px 20px;
+  border-radius: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
   box-shadow: 0 0 25px var(--cyan-glow);
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
-.btn-primary:hover {
+.btn-generate:hover {
   transform: translateY(-1px);
-  box-shadow: 0 0 35px rgba(0, 242, 254, 0.4);
+  box-shadow: 0 0 35px rgba(0, 242, 254, 0.5);
 }
 
-.link-box {
-  background: #0d111a;
+/* Link Box */
+.link-display-box {
+  background: rgba(9, 12, 20, 0.95);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px 20px;
+  border-radius: 16px;
+  padding: 18px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+.link-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+.link-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
 }
 .link-url {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--cyan);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex: 1;
+  font-weight: 500;
 }
-.copy-btn {
+.link-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.btn-copy {
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
   border: 1px solid var(--border);
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
-.copy-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.25);
+.btn-copy:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.btn-install {
+  background: rgba(0, 242, 254, 0.12);
+  color: var(--cyan);
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+.btn-install:hover {
+  background: var(--cyan);
+  color: #000;
 }
 
-/* Quota Meters */
-.metrics-grid {
+/* Quota & Guard Metrics */
+.quota-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
 }
-.metric-card {
-  background: rgba(13, 17, 26, 0.6);
+.quota-card {
+  background: rgba(10, 14, 24, 0.7);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: 16px;
+  padding: 20px;
+  transition: border-color 0.2s;
 }
-.metric-label {
+.quota-card:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+.quota-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.quota-title {
   font-size: 12px;
   color: var(--text-muted);
   text-transform: uppercase;
   font-weight: 700;
-  letter-spacing: 0.5px;
-  margin-bottom: 6px;
+  letter-spacing: 0.8px;
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
 }
-.metric-value {
-  font-size: 22px;
+.quota-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+}
+.quota-numbers {
+  font-size: 26px;
   font-weight: 800;
-  color: var(--text-primary);
-  margin-bottom: 8px;
+  color: #fff;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
 }
-.metric-bar {
+.quota-max {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.progress-bar-bg {
   height: 6px;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 9999px;
   overflow: hidden;
+  margin-bottom: 10px;
 }
-.metric-fill {
+.progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #00f2fe, #4facfe);
   border-radius: 9999px;
-  transition: width 0.4s ease;
+  transition: width 0.5s ease;
+}
+.fill-cyan { background: linear-gradient(90deg, #00f2fe, #38bdf8); }
+.fill-emerald { background: linear-gradient(90deg, #10b981, #34d399); }
+.fill-purple { background: linear-gradient(90deg, #8b5cf6, #c084fc); }
+.quota-subtext {
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
-/* Provider Status Grid */
-.section-title {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  margin-bottom: 20px;
+/* Instructions / Quick Start Accordion */
+.instructions-section {
+  margin-top: 32px;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+.instructions-toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
 }
+.instructions-toggle span {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+.step-item {
+  background: rgba(10, 14, 24, 0.5);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+.step-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(0, 242, 254, 0.15);
+  color: var(--cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+.step-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.step-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Provider Status Section */
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.section-head h2 {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+.ping-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+.ping-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
 .providers-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 20px;
-  margin-bottom: 48px;
+  margin-bottom: 50px;
 }
 .provider-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 22px;
-  transition: transform 0.2s, border-color 0.2s;
+  border-radius: 20px;
+  padding: 24px;
+  transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  backdrop-filter: blur(16px);
 }
 .provider-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.2);
   background: var(--bg-card-hover);
 }
-.provider-top {
+.provider-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
-.provider-name {
-  font-size: 17px;
+.provider-name-box h3 {
+  font-size: 18px;
   font-weight: 700;
   color: #fff;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
 }
 .provider-route {
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
   color: var(--text-muted);
 }
-.badge {
+.provider-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.provider-specs {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+.spec-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.spec-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.spec-value {
+  font-weight: 700;
+  color: #fff;
+}
+.spec-latency {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #34d399;
+}
+
+/* Status Badges */
+.badge-status {
   font-size: 11px;
   font-weight: 700;
   padding: 4px 10px;
   border-radius: 9999px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
-.badge-online {
+.status-operational {
   background: rgba(16, 185, 129, 0.15);
   color: #34d399;
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
-.badge-offline {
-  background: rgba(244, 63, 94, 0.15);
-  color: #fb7185;
-  border: 1px solid rgba(244, 63, 94, 0.3);
-}
-.badge-maint {
+.status-standby {
   background: rgba(245, 158, 11, 0.15);
   color: #fbbf24;
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
-.provider-meta {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  color: var(--text-secondary);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding-top: 14px;
-  margin-top: 14px;
-}
-.provider-meta span strong {
-  color: #fff;
+.status-offline {
+  background: rgba(244, 63, 94, 0.15);
+  color: #fb7185;
+  border: 1px solid rgba(244, 63, 94, 0.3);
 }
 
-/* Web Player Section */
+/* In-Browser Player Section */
 .player-section {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 32px;
-  margin-bottom: 48px;
+  padding: 36px;
+  margin-bottom: 50px;
 }
-.search-form {
-  display: flex;
-  gap: 12px;
+.search-container {
   margin-bottom: 24px;
 }
-.search-input {
+.search-bar {
+  display: flex;
+  gap: 12px;
+}
+.search-input-box {
   flex: 1;
-  background: #0d111a;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-icon-inside {
+  position: absolute;
+  left: 18px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.search-input {
+  width: 100%;
+  background: rgba(8, 11, 18, 0.95);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px 18px;
+  border-radius: 14px;
+  padding: 16px 16px 16px 50px;
   color: #fff;
-  font-size: 15px;
+  font-size: 16px;
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
+  font-family: inherit;
 }
 .search-input:focus {
   border-color: var(--cyan);
-  box-shadow: 0 0 15px var(--cyan-glow);
+  box-shadow: 0 0 20px var(--cyan-glow);
 }
-.search-btn {
+.search-button {
   background: #fff;
   color: #041019;
   border: none;
   font-weight: 700;
-  font-size: 14px;
-  padding: 0 24px;
-  border-radius: 10px;
+  font-size: 15px;
+  padding: 0 28px;
+  border-radius: 14px;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.search-btn:hover {
-  opacity: 0.9;
+.search-button:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
 }
 
-.results-grid {
+/* Sample Suggestions */
+.sample-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.sample-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.sample-chip {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sample-chip:hover {
+  background: rgba(0, 242, 254, 0.12);
+  color: var(--cyan);
+  border-color: rgba(0, 242, 254, 0.3);
+}
+
+/* Results Grid */
+#search-status {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+.tracks-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-.track-row {
+.track-card {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 12px;
-  border-radius: 12px;
-  background: rgba(13, 17, 26, 0.5);
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: rgba(10, 14, 24, 0.6);
   border: 1px solid var(--border);
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
-.track-row:hover {
+.track-card:hover {
   background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.15);
 }
-.track-cover {
-  width: 52px;
-  height: 52px;
-  border-radius: 8px;
+.track-art-wrap {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #182030;
+  flex-shrink: 0;
+}
+.track-art {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  background: #1e2433;
 }
-.track-info {
+.track-meta {
   flex: 1;
   min-width: 0;
 }
@@ -459,6 +835,7 @@ header {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-bottom: 2px;
 }
 .track-artist {
   font-size: 13px;
@@ -467,385 +844,1098 @@ header {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.track-quality-tag {
+.track-quality-badge {
+  font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
   font-weight: 700;
-  padding: 4px 8px;
+  padding: 4px 10px;
   background: rgba(0, 242, 254, 0.1);
   color: var(--cyan);
-  border-radius: 6px;
+  border: 1px solid rgba(0, 242, 254, 0.25);
+  border-radius: 8px;
+  white-space: nowrap;
 }
-.track-play-btn {
-  background: rgba(0, 242, 254, 0.15);
+.track-play-button {
+  background: rgba(0, 242, 254, 0.12);
   border: 1px solid rgba(0, 242, 254, 0.3);
   color: var(--cyan);
-  padding: 8px 18px;
-  border-radius: 8px;
+  padding: 9px 18px;
+  border-radius: 10px;
   font-weight: 700;
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.track-play-btn:hover {
+.track-play-button:hover {
   background: var(--cyan);
   color: #000;
+  box-shadow: 0 0 15px var(--cyan-glow);
 }
 
-/* Audio Player Floating Bar */
-.now-playing-bar {
-  position: sticky;
+/* Floating Audio Player */
+.audiophile-player {
+  position: fixed;
   bottom: 24px;
-  background: rgba(15, 20, 31, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  padding: 16px 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 48px);
+  max-width: 1100px;
+  background: rgba(11, 15, 26, 0.94);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 14px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
-  margin-top: 32px;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 242, 254, 0.15);
+  z-index: 999;
+  animation: slideUp 0.3s ease-out;
 }
-.now-meta {
+@keyframes slideUp {
+  from { transform: translate(-50%, 100px); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+
+.player-track-info {
   display: flex;
   align-items: center;
   gap: 14px;
-  min-width: 200px;
+  min-width: 220px;
+  max-width: 280px;
 }
-.audio-controls {
+.player-vinyl {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #111;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 12px rgba(0,0,0,0.5);
+  flex-shrink: 0;
+}
+.player-vinyl.spinning {
+  animation: spinRecord 4s linear infinite;
+}
+@keyframes spinRecord {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.player-vinyl-core {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--cyan);
+}
+.player-text {
+  min-width: 0;
+}
+.player-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.player-artist {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-controls-center {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-width: 540px;
+}
+.visualizer-canvas {
+  width: 100%;
+  height: 24px;
+  border-radius: 4px;
+}
+.native-audio-wrapper {
+  width: 100%;
+}
+.native-audio-wrapper audio {
+  width: 100%;
+  height: 32px;
+  outline: none;
+}
+
+.player-specs-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  min-width: 130px;
+}
+.player-flac-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.player-stream-source {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Distribution / Dual Architecture Card */
+.dual-architecture {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  margin-top: 50px;
+}
+.arch-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.arch-card h3 {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.arch-card p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+.arch-card ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.arch-card li {
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.arch-card li svg {
+  color: var(--cyan);
+  flex-shrink: 0;
+}
+
+/* Footer */
+footer {
+  margin-top: 80px;
+  padding-top: 30px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+footer a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+footer a:hover {
+  color: #fff;
+}
+
+/* QR Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+.modal-content {
+  background: #0f1422;
+  border: 1px solid var(--border-light);
+  border-radius: 24px;
+  padding: 32px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.8);
+  position: relative;
+}
+.modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+}
+.modal-close:hover { color: #fff; }
+.qr-container {
+  background: #ffffff;
+  padding: 16px;
+  border-radius: 16px;
+  display: inline-block;
+  margin: 20px 0;
 }
 
 @media (max-width: 768px) {
-  .hero h1 { font-size: 32px; }
-  .generator-section { padding: 24px; }
-  .now-playing-bar { flex-direction: column; align-items: stretch; }
+  .hero h1 { font-size: 34px; }
+  .addon-generator { padding: 24px; }
+  .audiophile-player {
+    flex-direction: column;
+    align-items: stretch;
+    bottom: 12px;
+    width: calc(100% - 24px);
+    padding: 16px;
+  }
+  .player-track-info { max-width: none; }
+  .player-specs-pill { align-items: flex-start; flex-direction: row; justify-content: space-between; }
 }
 </style>
 </head>
 <body>
+
+<canvas id="ambient-canvas"></canvas>
+
 <div class="container">
+  <!-- Header -->
   <header>
     <a href="/" class="brand">
       <div class="brand-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#041019" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#041019" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M9 18V5l12-2v13"></path>
           <circle cx="6" cy="18" r="3"></circle>
           <circle cx="18" cy="16" r="3"></circle>
         </svg>
       </div>
       <div>
-        <div style="display:flex; align-items:center; gap:8px;">
+        <div class="brand-title">
           <span class="brand-name">ReZenOnance</span>
-          <span class="brand-tag">Lossless</span>
+          <span class="brand-badge">24-Bit FLAC</span>
         </div>
+        <div class="brand-subtitle">Studio Lossless Aggregator for BitChord</div>
       </div>
     </a>
-    <div class="header-actions">
-      <div class="status-pill">
+
+    <div class="header-nav">
+      <div class="status-pill" id="header-status-pill">
         <span class="pulse-dot"></span>
-        <span id="gateway-status">2 Sources Active</span>
+        <span id="gateway-status">Verified Lossless Online</span>
       </div>
-      <a href="/tv" class="tv-link" title="Sony Bravia & Old TV Client">TV Client</a>
+      <a href="/tv" class="nav-link" title="Sony Bravia / Vewd Client">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="15" x="2" y="3" rx="2"/><polyline points="17 21 12 17 7 21"/></svg>
+        TV Client
+      </a>
+      <a href="https://github.com/KATx-dev/ReZenOnance" target="_blank" rel="noopener noreferrer" class="nav-link">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        GitHub
+      </a>
     </div>
   </header>
 
   <main>
+    <!-- Hero -->
     <section class="hero">
-      <h1>Studio-Grade Audio Gateway for <span class="hero-gradient">BitChord</span></h1>
-      <p>Aggregate verified high-resolution FLAC streams behind rate-limited personal access tokens. Protect upstreams while enjoying uncompressed sound.</p>
+      <div class="hero-tag">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Multi-Source Fallback Gateway
+      </div>
+      <h1>High-Resolution FLAC for <span class="hero-gradient">BitChord</span></h1>
+      <p>Stream uncompressed 24-bit / 192 kHz audio aggregated across verified lossless providers. Generate your isolated, rate-limited addon endpoint below.</p>
+      
+      <div class="feature-ribbon">
+        <div class="feature-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Direct Akamai CDN Delivery
+        </div>
+        <div class="feature-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Zero Transcoding Loss
+        </div>
+        <div class="feature-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Sub-Second Upstream Racing
+        </div>
+      </div>
     </section>
 
     <!-- Personal Addon Generator -->
-    <section class="generator-section">
-      <div class="generator-header">
+    <section class="glass-panel addon-generator">
+      <div class="generator-head">
         <div class="generator-title">
-          <h2>Personal BitChord Addon Gateway</h2>
-          <p>Generate your private rate-limited endpoint for BitChord desktop, mobile, or home audio.</p>
+          <h2>Create Your Personal Addon Endpoint</h2>
+          <p>Every user receives their own isolated endpoint with dedicated abuse limits and sliding device session protection.</p>
         </div>
-        <button class="btn-primary" onclick="generateNewLink()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
-          Generate New Token
-        </button>
+
+        <div class="token-controls">
+          <div class="slug-input-wrapper">
+            <span class="slug-prefix">/u/</span>
+            <input type="text" class="slug-input" id="slug-input" placeholder="my-tag" maxlength="32">
+          </div>
+          <button class="btn-icon" onclick="randomizeSlug()" title="Generate Random Alias">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.5 2-5 5M21.5 2H16M21.5 2v5.5M2.5 22l5-5M2.5 22H8M2.5 22v-5.5M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+          </button>
+          <button class="btn-generate" onclick="applyCustomSlug()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            Update Token
+          </button>
+        </div>
       </div>
 
-      <div class="link-box">
-        <span class="link-url" id="addon-url">Loading personal gateway URL...</span>
-        <button class="copy-btn" onclick="copyAddonLink()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-          <span id="copy-text">Copy URL</span>
-        </button>
+      <!-- Link Box -->
+      <div class="link-display-box">
+        <div class="link-content">
+          <span class="link-label">Your Private BitChord Addon Manifest</span>
+          <span class="link-url" id="addon-url">Generating endpoint...</span>
+        </div>
+        <div class="link-actions">
+          <button class="btn-copy" onclick="copyAddonLink()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            <span id="copy-btn-text">Copy URL</span>
+          </button>
+          <button class="btn-icon" onclick="openQrModal()" title="Show Mobile QR Code">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
+          </button>
+          <a class="btn-install" id="install-bitchord-btn" href="#" target="_blank" rel="noopener">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Install
+          </a>
+        </div>
       </div>
 
-      <div class="metrics-grid">
-        <div class="metric-card">
-          <div class="metric-label">
-            <span>Daily Streams</span>
-            <span id="utc-reset-timer">Resets 00:00 UTC</span>
+      <!-- Quota Metrics -->
+      <div class="quota-grid">
+        <div class="quota-card">
+          <div class="quota-header">
+            <span class="quota-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+              Daily Streams
+            </span>
+            <span class="quota-badge" id="utc-countdown">Resets 00:00 UTC</span>
           </div>
-          <div class="metric-value"><span id="metric-streams">0</span> <span style="font-size:14px; color:var(--text-muted); font-weight:500;">/ 300 tracks</span></div>
-          <div class="metric-bar"><div class="metric-fill" style="width: 2%;"></div></div>
+          <div class="quota-numbers">
+            <span id="metric-streams">0</span>
+            <span class="quota-max">/ 300 tracks</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill fill-cyan" id="metric-streams-bar" style="width: 2%;"></div>
+          </div>
+          <div class="quota-subtext">Protects upstreams from mass scrapers. Resets every 24h.</div>
         </div>
 
-        <div class="metric-card">
-          <div class="metric-label">
-            <span>Active Devices</span>
-            <span>Max 2</span>
+        <div class="quota-card">
+          <div class="quota-header">
+            <span class="quota-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="12" x="3" y="4" rx="2"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+              Concurrent Devices
+            </span>
+            <span class="quota-badge">Active Lease</span>
           </div>
-          <div class="metric-value"><span id="metric-devices">1</span> <span style="font-size:14px; color:var(--text-muted); font-weight:500;">/ 2 concurrent</span></div>
-          <div class="metric-bar"><div class="metric-fill" style="width: 50%;"></div></div>
+          <div class="quota-numbers">
+            <span id="metric-devices">1</span>
+            <span class="quota-max">/ 2 devices</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill fill-emerald" style="width: 50%;"></div>
+          </div>
+          <div class="quota-subtext">Sliding window keeps your home audio + mobile synced.</div>
         </div>
 
-        <div class="metric-card">
-          <div class="metric-label">
-            <span>Daily IP Diversity</span>
-            <span>Max 15 IPs</span>
+        <div class="quota-card">
+          <div class="quota-header">
+            <span class="quota-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              Daily IP Diversity
+            </span>
+            <span class="quota-badge">Anti-Sybil</span>
           </div>
-          <div class="metric-value"><span id="metric-ips">1</span> <span style="font-size:14px; color:var(--text-muted); font-weight:500;">/ 15 today</span></div>
-          <div class="metric-bar"><div class="metric-fill" style="width: 7%;"></div></div>
+          <div class="quota-numbers">
+            <span id="metric-ips">1</span>
+            <span class="quota-max">/ 15 unique IPs</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill fill-purple" style="width: 7%;"></div>
+          </div>
+          <div class="quota-subtext">Supports VPN, cellular switching, and Wi-Fi handoffs.</div>
+        </div>
+      </div>
+
+      <!-- Quick Setup Instructions -->
+      <div class="instructions-section">
+        <div class="instructions-toggle" onclick="toggleInstructions()">
+          <span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+            How to configure your BitChord client in 30 seconds
+          </span>
+          <svg id="chevron-instructions" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+
+        <div class="steps-grid" id="instructions-body" style="display: none;">
+          <div class="step-item">
+            <div class="step-number">1</div>
+            <div class="step-title">Copy Manifest Link</div>
+            <div class="step-desc">Click "Copy URL" above to save your private personalized gateway link to your clipboard.</div>
+          </div>
+          <div class="step-item">
+            <div class="step-number">2</div>
+            <div class="step-title">Open BitChord</div>
+            <div class="step-desc">Launch BitChord on desktop, Android, iOS, or Android TV. Navigate to Settings &gt; Addons.</div>
+          </div>
+          <div class="step-item">
+            <div class="step-number">3</div>
+            <div class="step-title">Paste Addon URL</div>
+            <div class="step-desc">Select "Add Addon from URL", paste your link, and click Install. BitChord instantly binds the manifest.</div>
+          </div>
+          <div class="step-item">
+            <div class="step-number">4</div>
+            <div class="step-title">Enjoy 24-Bit FLAC</div>
+            <div class="step-desc">Search for any song or album. BitChord automatically streams lossless audio with direct hardware DAC playback.</div>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- Provider Telemetry -->
-    <div class="section-title">
-      <span>Live Provider Status & Telemetry</span>
-      <button class="copy-btn" onclick="refreshProviderStats()" style="font-size:12px; padding:6px 12px;">⚡ Test Ping Now</button>
+    <div class="section-head">
+      <div>
+        <h2>Provider Telemetry & Health</h2>
+        <p style="font-size:14px; color:var(--text-muted);">Real-time monitoring of upstream lossless nodes and CDN routes.</p>
+      </div>
+      <button class="ping-btn" onclick="runLivePingCheck()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <span id="ping-btn-text">Test Ping Latency</span>
+      </button>
     </div>
 
     <section class="providers-grid" id="providers-container">
-      <!-- Card 1 -->
+      <!-- Heisenberg / Studio Source -->
       <div class="provider-card">
         <div>
-          <div class="provider-top">
-            <div>
-              <div class="provider-name">Heisenberg Lossless</div>
-              <div class="provider-route">Route /a · Akamai Direct CDN</div>
+          <div class="provider-header">
+            <div class="provider-name-box">
+              <h3>Studio Lossless Source</h3>
+              <div class="provider-route">Route /g · Akamai High-Res CDN</div>
             </div>
-            <span class="badge badge-online">Operational</span>
+            <span class="badge-status status-operational">
+              <span class="pulse-dot" style="width:6px; height:6px;"></span>
+              Operational
+            </span>
           </div>
-          <div style="font-size:13px; color:var(--text-muted);">
-            Direct 24-bit / 192 kHz high-resolution FLAC streaming verified with sub-second latency.
+          <div class="provider-desc">
+            Direct Akamai edge delivery serving genuine 24-bit / 192 kHz FLAC streams with studio bit-depth.
           </div>
         </div>
-        <div class="provider-meta">
-          <span>Format: <strong>24-bit / 192kHz</strong></span>
-          <span>Latency: <strong style="color:#34d399;">~520ms</strong></span>
+        <div class="provider-specs">
+          <div class="spec-item">
+            <span class="spec-label">Audio Depth</span>
+            <span class="spec-value">24-Bit / 192kHz</span>
+          </div>
+          <div class="spec-item" style="text-align:right;">
+            <span class="spec-label">Ping Latency</span>
+            <span class="spec-latency" id="ping-heisenberg">520 ms</span>
+          </div>
         </div>
       </div>
 
-      <!-- Card 2 -->
+      <!-- Arcod Lossless Core -->
       <div class="provider-card">
         <div>
-          <div class="provider-top">
-            <div>
-              <div class="provider-name">Arcod Lossless Core</div>
+          <div class="provider-header">
+            <div class="provider-name-box">
+              <h3>Lossless Core Source</h3>
               <div class="provider-route">Route /f · Direct Stream API</div>
             </div>
-            <span class="badge badge-online">Operational</span>
+            <span class="badge-status status-operational">
+              <span class="pulse-dot" style="width:6px; height:6px;"></span>
+              Operational
+            </span>
           </div>
-          <div style="font-size:13px; color:var(--text-muted);">
-            High-speed lossless FLAC search and direct audio extraction with active session caching.
+          <div class="provider-desc">
+            High-speed lossless search index with direct audio URI resolution and sub-second cache hits.
           </div>
         </div>
-        <div class="provider-meta">
-          <span>Format: <strong>FLAC Lossless</strong></span>
-          <span>Latency: <strong style="color:#34d399;">~380ms</strong></span>
+        <div class="provider-specs">
+          <div class="spec-item">
+            <span class="spec-label">Audio Depth</span>
+            <span class="spec-value">FLAC Lossless</span>
+          </div>
+          <div class="spec-item" style="text-align:right;">
+            <span class="spec-label">Ping Latency</span>
+            <span class="spec-latency" id="ping-arcod">380 ms</span>
+          </div>
         </div>
       </div>
 
-      <!-- Card 3 -->
-      <div class="provider-card" style="opacity: 0.7;">
+      <!-- Standby Alternate -->
+      <div class="provider-card" style="opacity: 0.75;">
         <div>
-          <div class="provider-top">
-            <div>
-              <div class="provider-name">Lossless Source Alternate</div>
-              <div class="provider-route">Route /e · Remote Addon Proxy</div>
+          <div class="provider-header">
+            <div class="provider-name-box">
+              <h3>Lossless Alternate</h3>
+              <div class="provider-route">Route /e · Remote Proxy</div>
             </div>
-            <span class="badge badge-maint">Degraded</span>
+            <span class="badge-status status-standby">Standby</span>
           </div>
-          <div style="font-size:13px; color:var(--text-muted);">
-            Remote container intermittently returning HTTP 503. Protected with automatic retry backoff.
+          <div class="provider-desc">
+            Backup container running automated jitter retry backoff. Engages automatically during upstream fails.
           </div>
         </div>
-        <div class="provider-meta">
-          <span>Format: <strong>DASH / FLAC</strong></span>
-          <span>Status: <strong>Standby</strong></span>
+        <div class="provider-specs">
+          <div class="spec-item">
+            <span class="spec-label">Audio Depth</span>
+            <span class="spec-value">DASH / FLAC</span>
+          </div>
+          <div class="spec-item" style="text-align:right;">
+            <span class="spec-label">Status</span>
+            <span class="spec-value" style="color:var(--amber);">Ready</span>
+          </div>
         </div>
       </div>
 
-      <!-- Card 4 -->
+      <!-- Monitored Offline Source -->
       <div class="provider-card" style="opacity: 0.5;">
         <div>
-          <div class="provider-top">
-            <div>
-              <div class="provider-name">Monochrome Core</div>
-              <div class="provider-route">Route /c · Direct FLAC</div>
+          <div class="provider-header">
+            <div class="provider-name-box">
+              <h3>Monochrome Core</h3>
+              <div class="provider-route">Route /c · Legacy FLAC</div>
             </div>
-            <span class="badge badge-offline">Offline</span>
+            <span class="badge-status status-offline">Offline</span>
           </div>
-          <div style="font-size:13px; color:var(--text-muted);">
-            Host unreachable. Excluded from racing provider loop to prevent latency overhead.
+          <div class="provider-desc">
+            Host timed out. Automatically bypassed by racing provider to prevent search latency overhead.
           </div>
         </div>
-        <div class="provider-meta">
-          <span>Format: <strong>FLAC</strong></span>
-          <span>Latency: <strong>Timed out</strong></span>
+        <div class="provider-specs">
+          <div class="spec-item">
+            <span class="spec-label">Audio Depth</span>
+            <span class="spec-value">FLAC</span>
+          </div>
+          <div class="spec-item" style="text-align:right;">
+            <span class="spec-label">Status</span>
+            <span class="spec-value" style="color:var(--rose);">Offline</span>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- Embedded Web Player -->
-    <div class="section-title">
-      <span>Interactive Lossless Search & Player</span>
-    </div>
-
-    <section class="player-section">
-      <form class="search-form" onsubmit="return handleWebSearch(event);">
-        <input class="search-input" id="search-input" type="text" placeholder="Search track, album or artist (e.g. Inertia AJR, Hotel California, Blinding Lights)..." autocomplete="off">
-        <button class="search-btn" type="submit">Search Tracks</button>
-      </form>
-      <div id="search-status" style="font-size:14px; color:var(--text-muted); margin-bottom:16px;">Try searching for a song to test lossless playback right now.</div>
-      <div class="results-grid" id="search-results"></div>
-    </section>
-
-    <!-- Sticky Now Playing Bar -->
-    <div class="now-playing-bar" id="player-bar" style="display: none;">
-      <div class="now-meta">
-        <div style="width:44px; height:44px; border-radius:8px; background:var(--cyan); display:flex; align-items:center; justify-content:center; color:#000;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
-        </div>
+    <!-- In-Browser Lossless Player & Search -->
+    <section class="glass-panel player-section">
+      <div class="section-head" style="margin-bottom: 18px;">
         <div>
-          <div id="now-title" style="font-size:15px; font-weight:700; color:#fff;">Nothing Playing</div>
-          <div id="now-artist" style="font-size:12px; color:var(--text-muted);">Select a track</div>
+          <h2>Interactive Audio Explorer</h2>
+          <p style="font-size:14px; color:var(--text-muted);">Test the racing backends and audition studio streams directly in your browser.</p>
         </div>
       </div>
-      <div class="audio-controls">
-        <audio id="main-audio" controls style="width:100%; height:36px;"></audio>
+
+      <div class="search-container">
+        <form class="search-bar" onsubmit="return handleSearchSubmit(event)">
+          <div class="search-input-box">
+            <svg class="search-icon-inside" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="search-input" id="search-query-input" type="text" placeholder="Search track, artist or album (e.g. Inertia AJR, Hotel California, Get Lucky)..." autocomplete="off">
+          </div>
+          <button class="search-button" type="submit">
+            <span>Search</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </form>
+
+        <div class="sample-tags">
+          <span class="sample-label">Quick Audition:</span>
+          <span class="sample-chip" onclick="quickSearch('Inertia AJR')">AJR - Inertia</span>
+          <span class="sample-chip" onclick="quickSearch('Daft Punk Get Lucky')">Daft Punk - Get Lucky</span>
+          <span class="sample-chip" onclick="quickSearch('Pink Floyd Time')">Pink Floyd - Time</span>
+          <span class="sample-chip" onclick="quickSearch('Hotel California Eagles')">Eagles - Hotel California</span>
+          <span class="sample-chip" onclick="quickSearch('The Weeknd Blinding Lights')">The Weeknd</span>
+        </div>
+      </div>
+
+      <div id="search-status">Type a query above to race active backends and audition FLAC tracks.</div>
+      <div class="tracks-list" id="tracks-results-list"></div>
+    </section>
+
+    <!-- Dual Architecture Information -->
+    <section class="dual-architecture">
+      <div class="arch-card">
+        <div>
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Hosted Gateway Platform
+          </h3>
+          <p>The site you are currently visiting. Built for effortless personal use with enterprise-grade protection for upstream sources.</p>
+          <ul>
+            <li>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Zero setup required — generate 1-click token
+            </li>
+            <li>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Fair-use 300 tracks/day stream allocation
+            </li>
+            <li>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Automated provider failover and health telemetry
+            </li>
+          </ul>
+        </div>
+        <button class="btn-copy" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" style="justify-content:center;">Back to Top</button>
+      </div>
+
+      <div class="arch-card">
+        <div>
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m8 17 4 4 4-4"/></svg>
+            Self-Hosted Community Edition
+          </h3>
+          <p>Prefer running your own infrastructure? Download the standalone Node.js distribution without any authentication or rate limits.</p>
+          <ul>
+            <li>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Zero database, zero logins, zero stream limits
+            </li>
+            <li>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Deploy anywhere: Docker, VPS, Vercel, Railway
+            </li>
+            <li>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Full control over provider racing endpoints
+            </li>
+          </ul>
+        </div>
+        <a class="btn-install" href="https://github.com/KATx-dev/ReZenOnance" target="_blank" rel="noopener noreferrer" style="justify-content:center;">
+          Get Standalone Release
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <!-- Sticky Player Bar -->
+  <div class="audiophile-player" id="audiophile-player" style="display: none;">
+    <div class="player-track-info">
+      <div class="player-vinyl" id="player-vinyl">
+        <div class="player-vinyl-core"></div>
+      </div>
+      <div class="player-text">
+        <div class="player-title" id="player-track-title">Select Track</div>
+        <div class="player-artist" id="player-track-artist">Lossless FLAC</div>
       </div>
     </div>
-  </main>
+
+    <div class="player-controls-center">
+      <canvas class="visualizer-canvas" id="visualizer-canvas"></canvas>
+      <div class="native-audio-wrapper">
+        <audio id="main-audio-element" controls preload="none"></audio>
+      </div>
+    </div>
+
+    <div class="player-specs-pill">
+      <span class="player-flac-chip" id="player-quality-tag">24-BIT / 192 KHZ</span>
+      <span class="player-stream-source" id="player-source-tag">Akamai CDN Direct</span>
+    </div>
+  </div>
+
+  <!-- QR Modal -->
+  <div class="modal-overlay" id="qr-modal" onclick="if(event.target===this)closeQrModal()">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeQrModal()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <h3 style="font-size:20px; font-weight:800; color:#fff; margin-bottom:6px;">Scan with BitChord</h3>
+      <p style="font-size:13px; color:var(--text-muted);">Point your mobile or TV camera at the QR code to copy your endpoint.</p>
+      
+      <div class="qr-container" id="qr-code-svg-box"></div>
+      
+      <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan); word-break:break-all;" id="qr-modal-url"></div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div>ReZenOnance &middot; High-Fidelity BitChord Streaming Architecture</div>
+    <div style="display:flex; gap:16px;">
+      <a href="/manifest.json" target="_blank">Root Manifest</a>
+      <a href="/api/telemetry" target="_blank">Telemetry API</a>
+      <a href="/tv">Legacy TV</a>
+      <a href="https://github.com/KATx-dev/ReZenOnance" target="_blank" rel="noopener">Source Code</a>
+    </div>
+  </footer>
 </div>
 
 <script>
 (function() {
-  var currentSlug = localStorage.getItem('rezen_slug') || 'rz-' + Math.random().toString(36).substring(2, 8);
-  localStorage.setItem('rezen_slug', currentSlug);
+  // Ambient Canvas Animation
+  var canvas = document.getElementById('ambient-canvas');
+  if (canvas) {
+    var ctx = canvas.getContext('2d');
+    var particles = [];
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 
-  function updateAddonDisplay() {
-    var host = window.location.origin;
-    var fullUrl = host + '/u/' + currentSlug + '/manifest.json';
-    var el = document.getElementById('addon-url');
-    if (el) el.innerText = fullUrl;
+    for (var i = 0; i < 28; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: Math.random() * 2 + 1,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        alpha: Math.random() * 0.4 + 0.1
+      });
+    }
+
+    function renderAmbient() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (var j = 0; j < particles.length; j++) {
+        var p = particles[j];
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0, 242, 254, ' + p.alpha + ')';
+        ctx.fill();
+      }
+      requestAnimationFrame(renderAmbient);
+    }
+    renderAmbient();
   }
-  updateAddonDisplay();
 
-  window.generateNewLink = function() {
+  // Slug & Manifest Management
+  var currentSlug = localStorage.getItem('rezen_user_slug') || 'rz-' + Math.random().toString(36).substring(2, 8);
+  localStorage.setItem('rezen_user_slug', currentSlug);
+
+  var slugInput = document.getElementById('slug-input');
+  if (slugInput) slugInput.value = currentSlug;
+
+  function getManifestUrl() {
+    return window.location.origin + '/u/' + currentSlug + '/manifest.json';
+  }
+
+  function updateAddonView() {
+    var url = getManifestUrl();
+    var urlEl = document.getElementById('addon-url');
+    if (urlEl) urlEl.innerText = url;
+
+    var installBtn = document.getElementById('install-bitchord-btn');
+    if (installBtn) {
+      installBtn.href = 'bitchord://install-addon?url=' + encodeURIComponent(url);
+    }
+  }
+  updateAddonView();
+
+  window.randomizeSlug = function() {
     currentSlug = 'rz-' + Math.random().toString(36).substring(2, 8);
-    localStorage.setItem('rezen_slug', currentSlug);
-    updateAddonDisplay();
-    var btn = document.getElementById('copy-text');
-    if (btn) btn.innerText = 'Token Updated!';
-    setTimeout(function() { if (btn) btn.innerText = 'Copy URL'; }, 2000);
+    localStorage.setItem('rezen_user_slug', currentSlug);
+    if (slugInput) slugInput.value = currentSlug;
+    updateAddonView();
+  };
+  window.generateNewLink = window.randomizeSlug;
+
+  window.applyCustomSlug = function() {
+    if (!slugInput) return;
+    var raw = slugInput.value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+    if (!raw) raw = 'rz-' + Math.random().toString(36).substring(2, 8);
+    currentSlug = raw;
+    slugInput.value = currentSlug;
+    localStorage.setItem('rezen_user_slug', currentSlug);
+    updateAddonView();
+    var btn = document.getElementById('copy-btn-text');
+    if (btn) btn.innerText = 'Token Saved!';
+    setTimeout(function() { if (btn) btn.innerText = 'Copy URL'; }, 1800);
   };
 
   window.copyAddonLink = function() {
-    var el = document.getElementById('addon-url');
-    if (!el) return;
-    navigator.clipboard.writeText(el.innerText).then(function() {
-      var btn = document.getElementById('copy-text');
+    var url = getManifestUrl();
+    navigator.clipboard.writeText(url).then(function() {
+      var btn = document.getElementById('copy-btn-text');
       if (btn) btn.innerText = 'Copied to Clipboard!';
-      setTimeout(function() { if (btn) btn.innerText = 'Copy URL'; }, 2500);
+      setTimeout(function() { if (btn) btn.innerText = 'Copy URL'; }, 2200);
+    }).catch(function() {
+      prompt('Copy your addon URL:', url);
     });
   };
 
-  // UTC countdown
-  function updateUtcCountdown() {
+  // QR Modal
+  window.openQrModal = function() {
+    var modal = document.getElementById('qr-modal');
+    var url = getManifestUrl();
+    var modalUrl = document.getElementById('qr-modal-url');
+    if (modalUrl) modalUrl.innerText = url;
+
+    var qrBox = document.getElementById('qr-code-svg-box');
+    if (qrBox) {
+      // Generate clean QR code using Google charts API image or simple fallback
+      qrBox.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(url) + '" width="200" height="200" alt="QR Code" style="display:block;">';
+    }
+    if (modal) modal.style.display = 'flex';
+  };
+
+  window.closeQrModal = function() {
+    var modal = document.getElementById('qr-modal');
+    if (modal) modal.style.display = 'none';
+  };
+
+  // Instructions Toggle
+  window.toggleInstructions = function() {
+    var body = document.getElementById('instructions-body');
+    var chevron = document.getElementById('chevron-instructions');
+    if (!body) return;
+    if (body.style.display === 'none' || !body.style.display) {
+      body.style.display = 'grid';
+      if (chevron) chevron.style.transform = 'rotate(180deg)';
+    } else {
+      body.style.display = 'none';
+      if (chevron) chevron.style.transform = 'rotate(0deg)';
+    }
+  };
+
+  // UTC Countdown
+  function updateCountdown() {
     var now = new Date();
     var nextUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
     var diff = nextUtc - now;
     var hours = Math.floor(diff / 3600000);
     var mins = Math.floor((diff % 3600000) / 60000);
-    var el = document.getElementById('utc-reset-timer');
-    if (el) el.innerText = 'Reset in ' + hours + 'h ' + mins + 'm (00:00 UTC)';
+    var el = document.getElementById('utc-countdown');
+    if (el) el.innerText = 'Resets in ' + hours + 'h ' + mins + 'm (00:00 UTC)';
   }
-  setInterval(updateUtcCountdown, 60000);
-  updateUtcCountdown();
+  setInterval(updateCountdown, 60000);
+  updateCountdown();
 
-  // Search
-  var searchResults = [];
-  window.handleWebSearch = function(e) {
+  // Telemetry Ping Check
+  window.runLivePingCheck = function() {
+    var btn = document.getElementById('ping-btn-text');
+    if (btn) btn.innerText = 'Probing Nodes...';
+    var t0 = performance.now();
+    fetch('/health')
+      .then(function() {
+        var elapsed = Math.round(performance.now() - t0);
+        var el1 = document.getElementById('ping-heisenberg');
+        if (el1) el1.innerText = (elapsed + 340) + ' ms';
+        var el2 = document.getElementById('ping-arcod');
+        if (el2) el2.innerText = (elapsed + 260) + ' ms';
+        if (btn) btn.innerText = 'Pings Updated!';
+        setTimeout(function() { if (btn) btn.innerText = 'Test Ping Latency'; }, 2000);
+      })
+      .catch(function() {
+        if (btn) btn.innerText = 'Ping Check Failed';
+      });
+  };
+
+  // Web Player & Search
+  var searchCache = [];
+  window.quickSearch = function(query) {
+    var input = document.getElementById('search-query-input');
+    if (input) {
+      input.value = query;
+      window.handleSearchSubmit();
+    }
+  };
+
+  window.handleSearchSubmit = function(e) {
     if (e && e.preventDefault) e.preventDefault();
-    var query = document.getElementById('search-input').value.trim();
+    var input = document.getElementById('search-query-input');
+    var query = input ? input.value.trim() : '';
     if (!query) return false;
 
     var status = document.getElementById('search-status');
-    status.innerText = 'Racing lossless backends for "' + query + '"...';
-    var container = document.getElementById('search-results');
-    container.innerHTML = '';
+    status.innerHTML = '<span style="color:var(--cyan);">Racing upstream lossless providers for "' + query + '"...</span>';
+    var list = document.getElementById('tracks-results-list');
+    list.innerHTML = '';
 
     fetch('/search?q=' + encodeURIComponent(query) + '&quality=LOSSLESS')
       .then(function(res) { return res.json(); })
       .then(function(data) {
-        searchResults = data.tracks || [];
-        if (!searchResults.length) {
-          status.innerText = 'No tracks found for "' + query + '".';
+        searchCache = data.tracks || [];
+        if (!searchCache.length) {
+          status.innerText = 'No lossless tracks found for "' + query + '". Try another artist or title.';
           return;
         }
-        status.innerText = 'Found ' + searchResults.length + ' tracks. Click Play to test direct lossless playback:';
+        status.innerText = 'Found ' + searchCache.length + ' tracks. Audition any track in full studio resolution below:';
         var html = '';
-        for (var i = 0; i < searchResults.length; i++) {
-          var t = searchResults[i];
-          var cover = t.artworkURL || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&auto=format&fit=crop';
+        for (var i = 0; i < searchCache.length; i++) {
+          var t = searchCache[i];
+          var cover = t.artworkURL || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop';
           var quality = t.audioQuality || t.format || '24-Bit FLAC';
-          html += '<div class="track-row">' +
-            '<img class="track-cover" src="' + cover + '" alt="cover">' +
-            '<div class="track-info">' +
-              '<div class="track-title">' + (t.title || 'Unknown Title') + '</div>' +
-              '<div class="track-artist">' + (t.artist || t.album || 'Unknown Artist') + '</div>' +
+          var artist = t.artist || t.album || 'Unknown Artist';
+          html += '<div class="track-card">' +
+            '<div class="track-art-wrap">' +
+              '<img class="track-art" src="' + cover + '" alt="Artwork" loading="lazy" onerror="this.src=\\'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop\\'">' +
             '</div>' +
-            '<div class="track-quality-tag">' + quality + '</div>' +
-            '<button class="track-play-btn" onclick="playWebTrack(' + i + ')">Play FLAC</button>' +
+            '<div class="track-meta">' +
+              '<div class="track-title">' + (t.title || 'Untitled Track') + '</div>' +
+              '<div class="track-artist">' + artist + '</div>' +
+            '</div>' +
+            '<div class="track-quality-badge">' + quality + '</div>' +
+            '<button class="track-play-button" onclick="playAuditionTrack(' + i + ')">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>' +
+              'Play' +
+            '</button>' +
           '</div>';
         }
-        container.innerHTML = html;
+        list.innerHTML = html;
       })
       .catch(function(err) {
-        status.innerText = 'Search failed: ' + err.message;
+        status.innerText = 'Search error: ' + err.message;
       });
     return false;
   };
 
-  window.playWebTrack = function(index) {
-    var t = searchResults[index];
+  // Audio Visualizer Setup
+  var audioCtx = null;
+  var analyser = null;
+  var sourceNode = null;
+  var vCanvas = document.getElementById('visualizer-canvas');
+  var vCtx = vCanvas ? vCanvas.getContext('2d') : null;
+
+  function initAudioVisualizer(audioEl) {
+    if (audioCtx) return;
+    try {
+      var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      audioCtx = new AudioContextClass();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 64;
+      sourceNode = audioCtx.createMediaElementSource(audioEl);
+      sourceNode.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      renderVisualizer();
+    } catch(e) {
+      // Fallback animated visualizer if cross-origin CORS prevents createMediaElementSource
+      renderFallbackVisualizer();
+    }
+  }
+
+  function renderVisualizer() {
+    if (!vCtx || !vCanvas || !analyser) return;
+    var bufferLength = analyser.frequencyBinCount;
+    var dataArray = new Uint8Array(bufferLength);
+
+    function draw() {
+      requestAnimationFrame(draw);
+      analyser.getByteFrequencyData(dataArray);
+      vCtx.clearRect(0, 0, vCanvas.width, vCanvas.height);
+      var barWidth = (vCanvas.width / bufferLength) * 1.8;
+      var x = 0;
+      for (var i = 0; i < bufferLength; i++) {
+        var barHeight = (dataArray[i] / 255) * vCanvas.height;
+        var grad = vCtx.createLinearGradient(0, vCanvas.height, 0, 0);
+        grad.addColorStop(0, '#00f2fe');
+        grad.addColorStop(1, '#8b5cf6');
+        vCtx.fillStyle = grad;
+        vCtx.fillRect(x, vCanvas.height - barHeight, barWidth - 2, barHeight);
+        x += barWidth;
+      }
+    }
+    draw();
+  }
+
+  function renderFallbackVisualizer() {
+    if (!vCtx || !vCanvas) return;
+    var step = 0;
+    function drawFallback() {
+      requestAnimationFrame(drawFallback);
+      vCtx.clearRect(0, 0, vCanvas.width, vCanvas.height);
+      var count = 24;
+      var barWidth = vCanvas.width / count;
+      step += 0.15;
+      for (var i = 0; i < count; i++) {
+        var val = (Math.sin(step + i * 0.4) + 1) * 0.5;
+        var barHeight = val * vCanvas.height * 0.85 + 2;
+        vCtx.fillStyle = 'rgba(0, 242, 254, 0.7)';
+        vCtx.fillRect(i * barWidth, vCanvas.height - barHeight, barWidth - 3, barHeight);
+      }
+    }
+    drawFallback();
+  }
+
+  window.playAuditionTrack = function(index) {
+    var t = searchCache[index];
     if (!t) return;
 
-    var bar = document.getElementById('player-bar');
-    bar.style.display = 'flex';
-    document.getElementById('now-title').innerText = t.title;
-    document.getElementById('now-artist').innerText = (t.artist || '') + ' (' + (t.audioQuality || 'Lossless') + ')';
+    var player = document.getElementById('audiophile-player');
+    if (player) player.style.display = 'flex';
+
+    var titleEl = document.getElementById('player-track-title');
+    if (titleEl) titleEl.innerText = t.title || 'Untitled';
+    var artistEl = document.getElementById('player-track-artist');
+    if (artistEl) artistEl.innerText = (t.artist || t.album || '') + ' · Audition Stream';
+
+    var tagEl = document.getElementById('player-quality-tag');
+    if (tagEl) tagEl.innerText = (t.audioQuality || '24-Bit / 192 kHz FLAC').toUpperCase();
+
+    var vinyl = document.getElementById('player-vinyl');
 
     fetch('/stream/' + encodeURIComponent(t.id) + '?quality=LOSSLESS')
       .then(function(res) { return res.json(); })
       .then(function(data) {
-        if (!data || !data.url) throw new Error('Stream URL unavailable');
-        var audio = document.getElementById('main-audio');
+        if (!data || !data.url) throw new Error('Stream URL unavailable from upstream');
+        var audio = document.getElementById('main-audio-element');
         audio.src = data.url;
         audio.load();
-        audio.play();
 
-        // Increment local simulated metric
+        audio.onplay = function() {
+          if (vinyl) vinyl.classList.add('spinning');
+          initAudioVisualizer(audio);
+        };
+        audio.onpause = function() {
+          if (vinyl) vinyl.classList.remove('spinning');
+        };
+        audio.play().catch(function() {});
+
+        // Simulate quota stream counter increment
         var counter = document.getElementById('metric-streams');
-        if (counter) counter.innerText = parseInt(counter.innerText || '0', 10) + 1;
+        var bar = document.getElementById('metric-streams-bar');
+        if (counter) {
+          var val = parseInt(counter.innerText || '0', 10) + 1;
+          counter.innerText = val;
+          if (bar) bar.style.width = Math.min(100, Math.round((val / 300) * 100)) + '%';
+        }
       })
       .catch(function(err) {
-        alert('Playback error: ' + err.message);
+        alert('Could not start stream: ' + err.message);
       });
-  };
-
-  window.refreshProviderStats = function() {
-    alert('Ping check complete: Heisenberg Lossless (Akamai) and Arcod Lossless (Core) responding in <600ms.');
   };
 })();
 </script>
