@@ -2337,22 +2337,39 @@ footer a:hover {
         <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Unlock your dedicated studio FLAC BitChord endpoint</p>
       </div>
 
-      <button class="btn-google-login" style="width:100%; justify-content:center; margin-bottom: 20px;" onclick="loginWithGoogle()">
+      <button class="btn-google-login" style="width:100%; justify-content:center; margin-bottom: 6px;" onclick="loginWithGoogle()">
         <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
         <span>Continue with Google</span>
       </button>
+      <div style="font-size:11px; color:var(--text-muted); text-align:center; margin-bottom: 18px;">Requires Google provider enabled in Supabase Dashboard</div>
 
       <div style="display:flex; align-items:center; gap: 12px; margin-bottom: 20px;">
         <div style="flex:1; height:1px; background:var(--border);"></div>
-        <span style="font-size:11px; text-transform:uppercase; color:var(--text-muted); letter-spacing:1px;">or email link</span>
+        <span style="font-size:11px; text-transform:uppercase; color:var(--text-muted); letter-spacing:1px;">or instant email code</span>
         <div style="flex:1; height:1px; background:var(--border);"></div>
       </div>
 
-      <form onsubmit="handleEmailLogin(event)">
-        <input type="email" id="modal-email-input" class="auth-input" placeholder="audiophile@example.com" required autocomplete="email">
-        <button type="submit" class="btn-submit-email" id="modal-email-submit">Send Sign-In Magic Link</button>
-      </form>
-      <div id="modal-auth-msg" style="margin-top: 14px; font-size: 13px; text-align: center; display: none;"></div>
+      <div id="modal-email-step">
+        <form onsubmit="handleEmailLogin(event)">
+          <input type="email" id="modal-email-input" class="auth-input" placeholder="audiophile@example.com" required autocomplete="email">
+          <button type="submit" class="btn-submit-email" id="modal-email-submit">Send Code & Magic Link</button>
+        </form>
+        <div id="modal-auth-msg" style="margin-top: 14px; font-size: 13px; text-align: center; display: none;"></div>
+      </div>
+
+      <div id="modal-otp-step" style="display:none; text-align:center;">
+        <div style="font-size:13px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">
+          We sent a 6-digit verification code to <span id="otp-email-display" style="color:#fff; font-weight:700;"></span>. Enter the code below or click the link in your email:
+        </div>
+        <form onsubmit="handleVerifyOtp(event)">
+          <input type="text" id="modal-otp-input" class="auth-input" placeholder="123456" maxlength="8" style="text-align:center; letter-spacing:6px; font-size:22px; font-family:'JetBrains Mono',monospace;" required autocomplete="one-time-code">
+          <button type="submit" class="btn-submit-email" id="modal-otp-submit">Verify Code & Unlock Addon</button>
+        </form>
+        <div id="modal-otp-msg" style="margin-top: 14px; font-size: 13px; text-align: center; display: none;"></div>
+        <button type="button" onclick="resetToEmailStep()" style="background:none; border:none; color:var(--cyan); font-size:12px; margin-top:14px; cursor:pointer; text-decoration:underline;">
+          Use a different email or resend
+        </button>
+      </div>
     </div>
   </div>
 
@@ -2449,6 +2466,8 @@ footer a:hover {
     if (m) m.style.display = 'none';
   };
 
+  var pendingAuthEmail = '';
+
   window.loginWithGoogle = async function() {
     if (!supabase) {
       alert('Authentication service is initializing. Please refresh and try again.');
@@ -2459,7 +2478,9 @@ footer a:hover {
         provider: 'google',
         options: { redirectTo: window.location.origin }
       });
-      if (error) alert(error.message);
+      if (error) {
+        alert('Google Sign-In: ' + error.message + '\n\nTo enable Google login, enable it in your Supabase Dashboard: Authentication -> Providers -> Google.\n\nYou can also sign in instantly using the Email Code option!');
+      }
     } catch (err) {
       alert('Login error: ' + (err.message || err));
     }
@@ -2470,12 +2491,16 @@ footer a:hover {
     var emailInput = document.getElementById('modal-email-input');
     var msgEl = document.getElementById('modal-auth-msg');
     var submitBtn = document.getElementById('modal-email-submit');
+    var emailStep = document.getElementById('modal-email-step');
+    var otpStep = document.getElementById('modal-otp-step');
+    var otpEmailDisplay = document.getElementById('otp-email-display');
     if (!emailInput || !supabase) return;
     var email = emailInput.value.trim();
     if (!email) return;
+    pendingAuthEmail = email;
 
     submitBtn.disabled = true;
-    submitBtn.innerText = 'Sending magic link...';
+    submitBtn.innerText = 'Sending code & link...';
     if (msgEl) {
       msgEl.style.display = 'block';
       msgEl.style.color = 'var(--text-secondary)';
@@ -2493,9 +2518,14 @@ footer a:hover {
           msgEl.innerText = error.message;
         }
       } else {
-        if (msgEl) {
-          msgEl.style.color = 'var(--emerald)';
-          msgEl.innerText = 'Magic link sent! Check your email inbox to complete sign-in.';
+        if (msgEl) msgEl.style.display = 'none';
+        if (emailStep) emailStep.style.display = 'none';
+        if (otpStep) otpStep.style.display = 'block';
+        if (otpEmailDisplay) otpEmailDisplay.innerText = email;
+        var otpInput = document.getElementById('modal-otp-input');
+        if (otpInput) {
+          otpInput.value = '';
+          setTimeout(function() { otpInput.focus(); }, 100);
         }
       }
     } catch (err) {
@@ -2505,8 +2535,64 @@ footer a:hover {
       }
     } finally {
       submitBtn.disabled = false;
-      submitBtn.innerText = 'Send Sign-In Magic Link';
+      submitBtn.innerText = 'Send Code & Magic Link';
     }
+  };
+
+  window.handleVerifyOtp = async function(e) {
+    e.preventDefault();
+    var otpInput = document.getElementById('modal-otp-input');
+    var msgEl = document.getElementById('modal-otp-msg');
+    var submitBtn = document.getElementById('modal-otp-submit');
+    if (!otpInput || !supabase) return;
+    var token = otpInput.value.trim();
+    if (!token) return;
+
+    submitBtn.disabled = true;
+    submitBtn.innerText = 'Verifying...';
+    if (msgEl) {
+      msgEl.style.display = 'block';
+      msgEl.style.color = 'var(--text-secondary)';
+      msgEl.innerText = 'Verifying code...';
+    }
+
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: pendingAuthEmail,
+        token: token,
+        type: 'email'
+      });
+      if (error) {
+        if (msgEl) {
+          msgEl.style.color = 'var(--rose)';
+          msgEl.innerText = error.message;
+        }
+      } else if (data.session) {
+        currentSession = data.session;
+        renderAuthState(data.session.user);
+        claimUserAddon(data.session.user, data.session.access_token);
+        closeAuthModal();
+      }
+    } catch (err) {
+      if (msgEl) {
+        msgEl.style.color = 'var(--rose)';
+        msgEl.innerText = err.message || 'Verification failed';
+      }
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerText = 'Verify Code & Unlock Addon';
+    }
+  };
+
+  window.resetToEmailStep = function() {
+    var emailStep = document.getElementById('modal-email-step');
+    var otpStep = document.getElementById('modal-otp-step');
+    var msgEl = document.getElementById('modal-auth-msg');
+    var otpMsg = document.getElementById('modal-otp-msg');
+    if (emailStep) emailStep.style.display = 'block';
+    if (otpStep) otpStep.style.display = 'none';
+    if (msgEl) msgEl.style.display = 'none';
+    if (otpMsg) otpMsg.style.display = 'none';
   };
 
   window.signOutUser = async function() {
