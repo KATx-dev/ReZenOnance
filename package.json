@@ -1,15 +1,15 @@
 {
-  "name": "qobuz-bitchord-addon",
+  "name": "rezenonance",
   "version": "1.0.0",
   "private": true,
-  "description": "Playback-only BitChord addon with a replaceable authorized Qobuz provider.",
+  "description": "Studio lossless BitChord music aggregator and gateway.",
   "type": "module",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "start": "npm install --omit=dev --no-audit --no-fund && node dist/server.js",
+    "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
     "test": "node --import tsx test/runner.js"
   },

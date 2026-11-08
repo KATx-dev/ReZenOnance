@@ -1,0 +1,20 @@
+services:
+  rezenonance:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rezenonance
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - HOST=0.0.0.0
+      - NODE_ENV=production
+      - QOBUZ_PROVIDER=multi
+      - HEISENBERG_BASE_URL=https://heisenbergbackaaahh.de.deplexo.com/a
+      - INSTABLE_BASE_URL=https://arcod.xyz
+      - QOBUZ_ID_SECRET=rezen-self-host-secret-token-change-this
+      - REQUEST_TIMEOUT_MS=10000
+      - CACHE_TTL_MS=300000
+      - UPSTREAM_RETRIES=2
