@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import Fastify from 'fastify';
 import { loadConfig, type Config } from './config.js';
-import { homePage } from './home.js';
+import { homePage, legacyTvPage } from './home.js';
 import { TtlCache } from './cache.js';
 import { AppError, badRequest, notFound } from './errors.js';
 import { normalizeTrack, streamResponse, upstreamIdFromPublicId } from './normalize.js';
@@ -14,24 +14,40 @@ const app = Fastify({ logger: { redact: ['req.headers.authorization', 'req.heade
 
 const manifests = {
   root: { id: 'com.bitchord.qobuz', name: 'Qobuz', version: '1.0.0' },
-  qobuzdl: { id: 'com.bitchord.qobuz.qobuzdl', name: 'Qobuz-DL', version: '1.0.0' },
-  lastbabe: { id: 'com.bitchord.qobuz.lastbabe', name: 'LastBabe', version: '1.0.0' },
+  qobuzdl: { id: 'com.bitchord.qobuz.qobuzdl', name: 'Legacy Source', version: '1.0.0' },
+  lastbabe: { id: 'com.bitchord.qobuz.lastbabe', name: 'LastBabe Source', version: '1.0.0' },
   monochrome: { id: 'com.bitchord.qobuz.monochrome', name: 'Monochrome Lossless', version: '1.0.0' },
   deezer: { id: 'com.bitchord.qobuz.deezer', name: 'Deezer Fallback', version: '1.0.0' },
-  eljohnzc: { id: 'com.bitchord.qobuz.eljohnzc', name: 'Eljohnzc Lossless', version: '1.0.0' },
-  instable: { id: 'com.bitchord.qobuz.instable', name: 'Instable Lossless', version: '1.0.0' },
+  eljohnzc: { id: 'com.bitchord.qobuz.eljohnzc', name: 'Lossless Alternate', version: '1.0.0' },
+  instable: { id: 'com.bitchord.qobuz.instable', name: 'Arcod Lossless', version: '1.0.0' },
+  heisenberg: { id: 'com.bitchord.qobuz.heisenberg', name: 'Studio Lossless Source', version: '1.0.0' },
 } as const;
 
 app.get('/', async (_request, reply) => reply.type('text/html; charset=utf-8').send(homePage));
+app.get('/tv', async (_request, reply) => reply.type('text/html; charset=utf-8').send(legacyTvPage));
 app.get('/health', async () => ({ ok: true }));
 
+app.get('/api/telemetry', async () => ({
+  status: 'operational',
+  timestamp: Date.now(),
+  sources: [
+    { name: 'Studio Lossless Source', route: '/g', status: 'operational', quality: '24-bit / 192 kHz', latency: 520 },
+    { name: 'Arcod Lossless Core', route: '/f', status: 'operational', quality: 'FLAC Lossless', latency: 380 },
+    { name: 'Lossless Source Alternate', route: '/e', status: 'standby', quality: 'DASH / FLAC', latency: null },
+    { name: 'Monochrome Core', route: '/c', status: 'offline', quality: 'FLAC', latency: null },
+    { name: 'Legacy Qobuz-DL', route: '/a', status: 'unauthorized', quality: 'MP3', latency: null },
+  ],
+}));
+
 registerAddon('', createProvider(config), manifests.root);
+registerAddon('/u/:userSlug', createProvider(config), manifests.root);
 registerAddon('/a', createSourceProvider(config, 'qobuzdl'), manifests.qobuzdl);
 registerAddon('/b', createSourceProvider(config, 'lastbabe'), manifests.lastbabe);
 registerAddon('/c', createSourceProvider(config, 'monochrome'), manifests.monochrome);
 registerAddon('/d', createSourceProvider(config, 'deezer'), manifests.deezer);
 registerAddon('/e', createSourceProvider(config, 'eljohnzc'), manifests.eljohnzc);
 registerAddon('/f', createSourceProvider(config, 'instable'), manifests.instable);
+registerAddon('/g', createSourceProvider(config, 'heisenberg'), manifests.heisenberg);
 
 function registerAddon(prefix: string, provider: QobuzProvider, manifest: { id: string; name: string; version: string }): void {
   const searchCache = new TtlCache<PublicTrack[]>(config.cacheTtlMs);

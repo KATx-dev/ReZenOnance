@@ -76,6 +76,7 @@ export function createRacingProvider(
   deezer?: QobuzProvider,
   eljohnzc?: QobuzProvider,
   instable?: QobuzProvider,
+  heisenberg?: QobuzProvider,
 ): QobuzProvider {
   const sources: Source[] = [
     { name: 'lastbabe', provider: lastbabe },
@@ -85,5 +86,6 @@ export function createRacingProvider(
   if (monochrome) sources.unshift({ name: 'monochrome', provider: monochrome });
   if (eljohnzc) sources.unshift({ name: 'eljohnzc', provider: eljohnzc });
   if (instable) sources.unshift({ name: 'instable', provider: instable });
+  if (heisenberg) sources.unshift({ name: 'heisenberg', provider: heisenberg });
   return new RacingProvider(sources);
 }

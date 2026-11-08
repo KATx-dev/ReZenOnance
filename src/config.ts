@@ -15,6 +15,7 @@ export interface Config {
   deezerBaseUrl?: string;
   eljohnzcBaseUrl?: string;
   instableBaseUrl?: string;
+  heisenbergBaseUrl?: string;
 }
 
 const positiveInt = (name: string, fallback: number): number => {
@@ -47,5 +48,6 @@ export function loadConfig(): Config {
     deezerBaseUrl: process.env.DEEZER_BASE_URL ?? 'https://dzr.tabs-vs-spaces.wtf',
     eljohnzcBaseUrl: process.env.ELJOHNZC_BASE_URL ?? 'https://eljohnzc-addon.de.deplexo.com/59efe06a96',
     instableBaseUrl: process.env.INSTABLE_BASE_URL ?? 'https://arcod.xyz',
+    heisenbergBaseUrl: process.env.HEISENBERG_BASE_URL ?? 'https://heisenbergbackaaahh.de.deplexo.com/a',
   };
 }

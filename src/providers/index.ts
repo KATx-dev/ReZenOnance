@@ -9,16 +9,19 @@ import { MonochromeProvider } from './monochrome.js';
 import { RemoteAddonProvider } from './remote-addon.js';
 import { InstableProvider } from './instable.js';
 
-export type IsolatedSource = 'qobuzdl' | 'lastbabe' | 'monochrome' | 'deezer' | 'eljohnzc' | 'instable';
+export type IsolatedSource = 'qobuzdl' | 'lastbabe' | 'monochrome' | 'deezer' | 'eljohnzc' | 'instable' | 'heisenberg';
 
 export function createProvider(config: Config): QobuzProvider {
   if (config.provider === 'qobuzdl') return new QobuzDlProvider(config);
   if (config.provider === 'multi') {
     return createRacingProvider(
-      new QobuzDlProvider(config), new LastBabeProvider(config),
-      new MonochromeProvider(config), new RemoteAddonProvider(config),
+      new QobuzDlProvider(config),
+      new LastBabeProvider(config),
+      new MonochromeProvider(config),
+      new RemoteAddonProvider(config),
       new RemoteAddonProvider(config, config.eljohnzcBaseUrl),
       new InstableProvider(config),
+      new RemoteAddonProvider(config, config.heisenbergBaseUrl),
     );
   }
   if (config.provider === 'http') return new HttpQobuzProvider(config);
@@ -31,5 +34,6 @@ export function createSourceProvider(config: Config, source: IsolatedSource): Qo
   if (source === 'deezer') return new RemoteAddonProvider(config);
   if (source === 'eljohnzc') return new RemoteAddonProvider(config, config.eljohnzcBaseUrl);
   if (source === 'instable') return new InstableProvider(config);
+  if (source === 'heisenberg') return new RemoteAddonProvider(config, config.heisenbergBaseUrl);
   return new LastBabeProvider(config);
 }

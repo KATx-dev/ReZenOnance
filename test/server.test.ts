@@ -12,12 +12,29 @@ test('GET /health returns ok', async () => {
   assert.deepEqual(JSON.parse(res.payload), { ok: true });
 });
 
-test('GET / returns lightweight HTML TV page', async () => {
+test('GET / returns modern web portal', async () => {
   const res = await app.inject({ method: 'GET', url: '/' });
   assert.equal(res.statusCode, 200);
   assert.match(res.headers['content-type'] ?? '', /text\/html/);
-  assert.match(res.payload, /<audio/);
+  assert.match(res.payload, /ReZenOnance/);
+  assert.match(res.payload, /addon-url/);
+  assert.match(res.payload, /generateNewLink/);
+});
+
+test('GET /tv returns lightweight legacy TV page', async () => {
+  const res = await app.inject({ method: 'GET', url: '/tv' });
+  assert.equal(res.statusCode, 200);
+  assert.match(res.headers['content-type'] ?? '', /text\/html/);
+  assert.match(res.payload, /ReZenOnance TV/);
   assert.match(res.payload, /doSearch/);
+});
+
+test('GET /api/telemetry returns telemetry data', async () => {
+  const res = await app.inject({ method: 'GET', url: '/api/telemetry' });
+  assert.equal(res.statusCode, 200);
+  const data = JSON.parse(res.payload);
+  assert.equal(data.status, 'operational');
+  assert.ok(Array.isArray(data.sources));
 });
 
 test('GET /manifest.json returns valid BitChord contract', async () => {
@@ -30,8 +47,17 @@ test('GET /manifest.json returns valid BitChord contract', async () => {
   assert.ok(Array.isArray(data.settings));
 });
 
-test('Isolated manifests (/a through /f) return valid playback-only manifests', async () => {
-  const prefixes = ['/a', '/b', '/c', '/d', '/e', '/f'];
+test('GET /u/:userSlug/manifest.json returns valid personal gateway manifest', async () => {
+  const res = await app.inject({ method: 'GET', url: '/u/user-abc-123/manifest.json' });
+  assert.equal(res.statusCode, 200);
+  const data = JSON.parse(res.payload);
+  assert.equal(data.id, 'com.bitchord.qobuz');
+  assert.deepEqual(data.resources, ['search', 'stream']);
+  assert.equal(data.allowDownloads, 0);
+});
+
+test('Isolated manifests (/a through /g) return valid playback-only manifests', async () => {
+  const prefixes = ['/a', '/b', '/c', '/d', '/e', '/f', '/g'];
   for (const prefix of prefixes) {
     const res = await app.inject({ method: 'GET', url: `${prefix}/manifest.json` });
     assert.equal(res.statusCode, 200);
