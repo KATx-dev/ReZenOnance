@@ -1610,7 +1610,7 @@ footer a:hover {
           <span class="brand-name">ReZenOnance</span>
           <span class="brand-badge">24-Bit FLAC</span>
         </div>
-        <div class="brand-subtitle">Studio Lossless Aggregator for BitChord</div>
+        <div class="brand-subtitle">Universal Studio Lossless Music Aggregator</div>
       </div>
     </a>
 
@@ -1655,8 +1655,8 @@ footer a:hover {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         Multi-Source Fallback Gateway
       </div>
-      <h1>High-Resolution FLAC for <span class="hero-gradient">BitChord</span></h1>
-      <p>Stream uncompressed 24-bit / 192 kHz audio aggregated across verified lossless providers. Generate your isolated, rate-limited addon endpoint below.</p>
+      <h1>High-Resolution FLAC for <span class="hero-gradient">Universal Players</span></h1>
+      <p>Stream uncompressed 24-bit / 192 kHz audio across verified lossless providers. Plug-and-play compatible with <strong>Mochy</strong>, <strong>Metrofuse</strong>, <strong>EchoMusic</strong>, and custom music clients.</p>
       
       <div class="feature-ribbon">
         <div class="feature-item">
@@ -1681,7 +1681,7 @@ footer a:hover {
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         <div>
           <div class="anti-abuse-title">Anti-Abuse Protection Triggered</div>
-          <div class="anti-abuse-text" id="anti-abuse-text">This device or household is already linked to another personal endpoint. Only 1 personal BitChord addon is permitted per household to protect unmetered studio FLAC bandwidth. If you require private unlimited multi-device nodes, please check the Standalone Self-Host Release v1.0.0 on GitHub.</div>
+          <div class="anti-abuse-text" id="anti-abuse-text">This device or household is already linked to another personal endpoint. Only 1 personal addon endpoint is permitted per household to protect unmetered studio FLAC bandwidth. If you require private unlimited multi-device nodes, please check the Standalone Self-Host Release v1.0.0 on GitHub.</div>
         </div>
       </div>
 
@@ -1691,7 +1691,7 @@ footer a:hover {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           Authentication & Abuse Wall Active
         </div>
-        <h3>Claim Your Dedicated BitChord Addon Endpoint</h3>
+        <h3>Claim Your Dedicated Lossless Addon Endpoint</h3>
         <p>To preserve unmetered 24-bit Akamai studio delivery and prevent mass bot scraping, each listener receives one private endpoint protected by anti-sybil device cookies and daily quota gates.</p>
         <div class="auth-actions-group">
           <button class="btn-google-login" onclick="loginWithGoogle()">
@@ -1743,7 +1743,7 @@ footer a:hover {
       <!-- Link Box -->
       <div class="link-display-box">
         <div class="link-content">
-          <span class="link-label">Your Private BitChord Addon Manifest</span>
+          <span class="link-label">Your Private Addon Manifest (Mochy, Metrofuse, EchoMusic, Universal)</span>
           <span class="link-url" id="addon-url">Generating endpoint...</span>
         </div>
         <div class="link-actions">
@@ -1756,7 +1756,7 @@ footer a:hover {
           </button>
           <a class="btn-install" id="install-bitchord-btn" href="#" target="_blank" rel="noopener">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Install
+            Install to App
           </a>
         </div>
       </div>
@@ -1815,40 +1815,6 @@ footer a:hover {
             <div class="progress-bar-fill fill-purple" id="metric-ips-bar" style="width: 7%;"></div>
           </div>
           <div class="quota-subtext">Supports VPN, cellular switching, and Wi-Fi handoffs.</div>
-        </div>
-      </div>
-
-      <!-- Quick Setup Instructions -->
-      <div class="instructions-section">
-        <div class="instructions-toggle" onclick="toggleInstructions()">
-          <span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
-            How to configure your BitChord client in 30 seconds
-          </span>
-          <svg id="chevron-instructions" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-
-        <div class="steps-grid" id="instructions-body" style="display: none;">
-          <div class="step-item">
-            <div class="step-number">1</div>
-            <div class="step-title">Copy Manifest Link</div>
-            <div class="step-desc">Click "Copy URL" above to save your private personalized gateway link to your clipboard.</div>
-          </div>
-          <div class="step-item">
-            <div class="step-number">2</div>
-            <div class="step-title">Open BitChord</div>
-            <div class="step-desc">Launch BitChord on desktop, Android, iOS, or Android TV. Navigate to Settings &gt; Addons.</div>
-          </div>
-          <div class="step-item">
-            <div class="step-number">3</div>
-            <div class="step-title">Paste Addon URL</div>
-            <div class="step-desc">Select "Add Addon from URL", paste your link, and click Install. BitChord instantly binds the manifest.</div>
-          </div>
-          <div class="step-item">
-            <div class="step-number">4</div>
-            <div class="step-title">Enjoy 24-Bit FLAC</div>
-            <div class="step-desc">Search for any song or album. BitChord automatically streams lossless audio with direct hardware DAC playback.</div>
-          </div>
         </div>
       </div>
     </section>
@@ -2059,7 +2025,7 @@ footer a:hover {
           <div>
             <div style="font-weight:700; font-size:14px; margin-bottom:2px;">Bluetooth Bottleneck Flagged</div>
             <div style="font-size:13px; line-height:1.5;">
-              Your active output device appears to be Bluetooth. Standard SBC/AAC wireless codecs compress audio down to ~256-320 kbps. Even if BitChord streams a 24-bit/192kHz studio FLAC file, your wireless link is downsampling it into lossy audio before it hits your ears.
+              Your active output device appears to be Bluetooth. Standard SBC/AAC wireless codecs compress audio down to ~256-320 kbps. Even if your music player streams a 24-bit/192kHz studio FLAC file, your wireless link is downsampling it into lossy audio before it hits your ears.
             </div>
           </div>
         </div>
@@ -2334,7 +2300,7 @@ footer a:hover {
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
         </div>
         <h3 style="font-size: 20px; font-weight: 800; color:#fff;">Sign In to ReZenOnance</h3>
-        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Unlock your dedicated studio FLAC BitChord endpoint</p>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Unlock your dedicated studio FLAC addon endpoint</p>
       </div>
 
       <button class="btn-google-login" style="width:100%; justify-content:center; margin-bottom: 6px;" onclick="loginWithGoogle()">
@@ -2379,8 +2345,8 @@ footer a:hover {
       <button class="modal-close" onclick="closeQrModal()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
-      <h3 style="font-size:20px; font-weight:800; color:#fff; margin-bottom:6px;">Scan with BitChord</h3>
-      <p style="font-size:13px; color:var(--text-muted);">Point your mobile or TV camera at the QR code to copy your endpoint.</p>
+      <h3 style="font-size:20px; font-weight:800; color:#fff; margin-bottom:6px;">Scan with Music App</h3>
+      <p style="font-size:13px; color:var(--text-muted);">Point your mobile or TV camera at the QR code to load into Mochy, Metrofuse, EchoMusic, or custom player.</p>
       
       <div class="qr-container" id="qr-code-svg-box"></div>
       
@@ -2390,7 +2356,7 @@ footer a:hover {
 
   <!-- Footer -->
   <footer>
-    <div>ReZenOnance &middot; High-Fidelity BitChord Streaming Architecture</div>
+    <div>ReZenOnance &middot; Universal High-Fidelity Lossless Streaming Architecture</div>
     <div style="display:flex; gap:16px;">
       <a href="/manifest.json" target="_blank">Root Manifest</a>
       <a href="/api/telemetry" target="_blank">Telemetry API</a>
@@ -2686,7 +2652,7 @@ footer a:hover {
       if (!res.ok) {
         if (data.code === 'SYBIL_DETECTED' || res.status === 403) {
           if (banner) banner.style.display = 'flex';
-          if (textEl) textEl.innerText = data.error || 'Anti-Abuse limit: Only 1 personal BitChord addon permitted per device.';
+          if (textEl) textEl.innerText = data.error || 'Anti-Abuse limit: Only 1 personal addon endpoint permitted per device.';
         } else {
           console.warn('Could not claim addon:', data.error);
         }

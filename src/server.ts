@@ -223,7 +223,7 @@ function parseQuality(value?: string): Quality {
 const isDirectRun = process.argv[1] ? path.resolve(process.argv[1]) === fileURLToPath(import.meta.url) : false;
 if (process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'test' && isDirectRun) {
   app.listen({ host: config.host, port: config.port }).then(() => {
-    app.log.info({ host: config.host, port: config.port, provider: config.provider }, 'BitChord addon listening');
+    app.log.info({ host: config.host, port: config.port, provider: config.provider }, 'ReZenOnance addon gateway listening');
   }).catch(error => { app.log.error(error); process.exit(1); });
 }
 

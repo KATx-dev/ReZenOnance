@@ -1,8 +1,8 @@
 # ReZenOnance
 
-> **Studio-Grade Lossless Music Aggregator & Personal Gateway for BitChord**
+> **Universal Studio-Grade Lossless Music Aggregator & Addon Gateway**
 
-**ReZenOnance** aggregates verified high-resolution FLAC streams (up to **24-bit / 192 kHz**) into a unified, high-performance BitChord music addon. It operates in a dual-distribution architecture:
+**ReZenOnance** aggregates verified high-resolution FLAC streams (up to **24-bit / 192 kHz**) into a unified, high-performance lossless music addon compatible with **Mochy**, **Metrofuse**, **EchoMusic**, and custom players. It operates in a dual-distribution architecture:
 
 1. **Hosted Web Portal & Gateway**: A modern, glassmorphic audiophile hub providing live provider health telemetry, an interactive hardware & gear diagnostic lab, an in-browser lossless player with real-time frequency visualizer, and personalized rate-limited addon endpoints (`/u/:userSlug/manifest.json`).
 2. **Standalone Community Release**: A plug-and-play, zero-database, zero-auth Node.js deployment for self-hosters on Docker, Vercel, Railway, or home servers.
@@ -46,7 +46,7 @@ All manifests strictly declare `"allowDownloads": 0` for direct streaming compat
 | :--- | :--- | :--- |
 | `/` | `GET` | Audiophile web portal, link generator, gear diagnostic lab, and player |
 | `/tv` | `GET` | Lightweight client for Sony Bravia & legacy Vewd TV browsers |
-| `/manifest.json` | `GET` | Root BitChord addon contract (`id: com.bitchord.qobuz`, `allowDownloads: 0`) |
+| `/manifest.json` | `GET` | Universal addon manifest contract (`id: com.bitchord.qobuz`, `allowDownloads: 0`) |
 | `/u/:userSlug/manifest.json` | `GET` | Isolated personal gateway manifest with rate-limiting context |
 | `/search?q=...&quality=LOSSLESS` | `GET` | Races active lossless backends; returns normalized tracks with signed IDs |
 | `/stream/:id?quality=LOSSLESS` | `GET` | Resolves signed opaque track ID to direct playable HTTPS stream URL |
@@ -125,14 +125,15 @@ UPSTREAM_RETRIES=2
 
 ---
 
-## 📱 Adding to BitChord
+## 📱 Universal App Compatibility
 
-1. Open the ReZenOnance web portal at `https://your-deployment-url/`.
-2. Under **Personal BitChord Addon Gateway**, customize your slug or click **Generate New Token**.
-3. Click **Copy URL** (or click **Install** to trigger `bitchord://install-addon?url=...`).
-   - Alternatively, open the **QR Code Modal** and scan with your mobile device or Android TV camera.
-4. In BitChord, go to **Settings → Addons → Add Addon from URL**, paste your link, and save.
-5. Enjoy pure 24-bit studio FLAC across all your devices.
+ReZenOnance provides standard addon manifest endpoints compatible with popular audio players:
+- **Mochy**
+- **Metrofuse**
+- **EchoMusic**
+- Custom players implementing addon manifest protocols
+
+Users can copy their private addon manifest URL or scan the dynamic QR code directly from the web portal.
 
 ---
 
