@@ -2479,7 +2479,7 @@ footer a:hover {
         options: { redirectTo: window.location.origin }
       });
       if (error) {
-        alert('Google Sign-In: ' + error.message + '\n\nTo enable Google login, enable it in your Supabase Dashboard: Authentication -> Providers -> Google.\n\nYou can also sign in instantly using the Email Code option!');
+        alert('Google Sign-In: ' + error.message + '\\n\\nNote: To enable Google login, enable it in your Supabase Dashboard: Authentication -> Providers -> Google.\\n\\nYou can also sign in instantly using the Email Code option!');
       }
     } catch (err) {
       alert('Login error: ' + (err.message || err));
