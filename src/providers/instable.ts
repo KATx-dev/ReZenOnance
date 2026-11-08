@@ -21,7 +21,7 @@ export class InstableProvider implements QobuzProvider {
     if (!isRecord(body) || typeof body.url !== 'string' || !/^https:\/\//i.test(body.url)) return null;
     return {
       url: body.url,
-      format: mimeFormat(body.mimeType),
+      format: mimeFormat(body.mimeType) ?? 'flac',
       quality: typeof body.quality === 'number' ? String(body.quality) : quality,
       manifest: 'none',
       encrypted: false,
@@ -29,7 +29,7 @@ export class InstableProvider implements QobuzProvider {
   }
 
   private async request(path: string, params: Record<string, string>): Promise<unknown> {
-    const base = this.config.instableBaseUrl ?? 'https://instable.arcod.xyz';
+    const base = this.config.instableBaseUrl ?? 'https://arcod.xyz';
     const url = new URL(path.replace(/^\/+/, ''), base.endsWith('/') ? base : `${base}/`);
     for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
     let lastError: unknown;
