@@ -7,6 +7,7 @@ export const homePage = `<!doctype html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
   --bg-deep: #07090e;
@@ -426,6 +427,275 @@ header {
 .btn-install:hover {
   background: var(--cyan);
   color: #000;
+}
+
+/* User Profile & Auth Header */
+.btn-nav-auth {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 242, 254, 0.12);
+  color: var(--cyan);
+  border: 1px solid rgba(0, 242, 254, 0.4);
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-nav-auth:hover {
+  background: var(--cyan);
+  color: #041019;
+  box-shadow: 0 0 16px var(--cyan-glow);
+}
+.header-user-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(14, 19, 31, 0.85);
+  border: 1px solid var(--border-light);
+  border-radius: 9999px;
+  padding: 4px 12px 4px 6px;
+  font-size: 13px;
+}
+.header-user-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--cyan), var(--purple));
+  color: #041019;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+.btn-logout {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 6px;
+  transition: color 0.2s;
+}
+.btn-logout:hover {
+  color: var(--rose);
+}
+
+/* Auth Gate in Addon Section */
+.auth-gate-box {
+  background: linear-gradient(135deg, rgba(16, 24, 40, 0.95), rgba(12, 17, 29, 0.9));
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  border-radius: 18px;
+  padding: 34px 28px;
+  text-align: center;
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+}
+.auth-gate-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 242, 254, 0.12);
+  color: var(--cyan);
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  border-radius: 9999px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  letter-spacing: 0.5px;
+}
+.auth-gate-box h3 {
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 10px;
+  color: #fff;
+  letter-spacing: -0.4px;
+}
+.auth-gate-box p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  max-width: 640px;
+  margin: 0 auto 24px;
+  line-height: 1.6;
+}
+.auth-actions-group {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.btn-google-login {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  color: #1f2937;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.btn-google-login:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.25);
+}
+.btn-email-login {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 12px 22px;
+  border-radius: 12px;
+  border: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-email-login:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.auth-gate-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* User Addon Unlocked Banner */
+.user-verified-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 12px;
+  padding: 12px 20px;
+  margin-bottom: 24px;
+  font-size: 13px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.verified-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--emerald);
+  font-weight: 700;
+}
+
+/* Anti-Abuse Warning Banner */
+.anti-abuse-banner {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.18), rgba(245, 158, 11, 0.18));
+  border: 1px solid rgba(244, 63, 94, 0.45);
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.anti-abuse-banner svg {
+  color: var(--rose);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.anti-abuse-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fecdd3;
+  margin-bottom: 4px;
+}
+.anti-abuse-text {
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+/* Auth Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.auth-modal-card {
+  background: #0f1423;
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
+  padding: 36px;
+  width: 100%;
+  max-width: 440px;
+  position: relative;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+}
+.modal-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+}
+.modal-close-btn:hover {
+  color: var(--text-primary);
+}
+.auth-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-light);
+  color: #fff;
+  font-size: 14px;
+  margin-bottom: 12px;
+  outline: none;
+  font-family: inherit;
+}
+.auth-input:focus {
+  border-color: var(--cyan);
+}
+.btn-submit-email {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--cyan), var(--blue));
+  border: none;
+  color: #041019;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btn-submit-email:hover {
+  opacity: 0.9;
 }
 
 /* Quota & Guard Metrics */
@@ -1361,6 +1631,20 @@ footer a:hover {
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
         GitHub
       </a>
+
+      <!-- Auth Controls in Header -->
+      <button class="btn-nav-auth" id="header-signin-btn" onclick="openAuthModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        <span>Sign In</span>
+      </button>
+
+      <div class="header-user-pill" id="header-user-pill" style="display:none;">
+        <div class="header-user-avatar" id="header-user-avatar">U</div>
+        <span id="header-user-email" style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600;"></span>
+        <button class="btn-logout" onclick="signOutUser()" title="Sign Out">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -1391,7 +1675,50 @@ footer a:hover {
     </section>
 
     <!-- Personal Addon Generator -->
-    <section class="glass-panel addon-generator">
+    <section class="glass-panel addon-generator" id="addon-section">
+      <!-- Anti-abuse error banner -->
+      <div class="anti-abuse-banner" id="anti-abuse-banner" style="display:none;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div>
+          <div class="anti-abuse-title">Anti-Abuse Protection Triggered</div>
+          <div class="anti-abuse-text" id="anti-abuse-text">This device or household is already linked to another personal endpoint. Only 1 personal BitChord addon is permitted per household to protect unmetered studio FLAC bandwidth. If you require private unlimited multi-device nodes, please check the Standalone Self-Host Release v1.0.0 on GitHub.</div>
+        </div>
+      </div>
+
+      <!-- Auth Gate (Shown when logged out) -->
+      <div class="auth-gate-box" id="auth-gate-box">
+        <div class="auth-gate-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Authentication & Abuse Wall Active
+        </div>
+        <h3>Claim Your Dedicated BitChord Addon Endpoint</h3>
+        <p>To preserve unmetered 24-bit Akamai studio delivery and prevent mass bot scraping, each listener receives one private endpoint protected by anti-sybil device cookies and daily quota gates.</p>
+        <div class="auth-actions-group">
+          <button class="btn-google-login" onclick="loginWithGoogle()">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+            <span>Continue with Google</span>
+          </button>
+          <button class="btn-email-login" onclick="openAuthModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span>Email Sign In / Magic Link</span>
+          </button>
+        </div>
+        <div class="auth-gate-sub">
+          <span>🔒 1 Endpoint per account/device</span> • <span>🍪 Signed __rz_tracker cookie tracking</span> • <span>⚡ 300 tracks/day</span>
+        </div>
+      </div>
+
+      <!-- Verified user header (Shown when logged in) -->
+      <div id="verified-user-box" style="display:none;">
+        <div class="user-verified-header">
+          <div class="verified-tag">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 11 11 13 15 9"/></svg>
+            Verified Audiophile: <span id="auth-display-email" style="font-weight:700; color:#fff;"></span>
+          </div>
+          <span style="color:var(--text-secondary); font-size:12px;">Endpoint Bound to Account</span>
+        </div>
+      </div>
+
       <div class="generator-head">
         <div class="generator-title">
           <h2>Create Your Personal Addon Endpoint</h2>
@@ -1467,7 +1794,7 @@ footer a:hover {
             <span class="quota-max">/ 2 devices</span>
           </div>
           <div class="progress-bar-bg">
-            <div class="progress-bar-fill fill-emerald" style="width: 50%;"></div>
+            <div class="progress-bar-fill fill-emerald" id="metric-devices-bar" style="width: 50%;"></div>
           </div>
           <div class="quota-subtext">Sliding window keeps your home audio + mobile synced.</div>
         </div>
@@ -1475,7 +1802,7 @@ footer a:hover {
         <div class="quota-card">
           <div class="quota-header">
             <span class="quota-title">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>
               Daily IP Diversity
             </span>
             <span class="quota-badge">Anti-Sybil</span>
@@ -1485,7 +1812,7 @@ footer a:hover {
             <span class="quota-max">/ 15 unique IPs</span>
           </div>
           <div class="progress-bar-bg">
-            <div class="progress-bar-fill fill-purple" style="width: 7%;"></div>
+            <div class="progress-bar-fill fill-purple" id="metric-ips-bar" style="width: 7%;"></div>
           </div>
           <div class="quota-subtext">Supports VPN, cellular switching, and Wi-Fi handoffs.</div>
         </div>
@@ -1996,6 +2323,39 @@ footer a:hover {
     </div>
   </div>
 
+  <!-- Auth Modal -->
+  <div class="modal-overlay" id="auth-modal" onclick="if(event.target===this)closeAuthModal()">
+    <div class="auth-modal-card">
+      <button class="modal-close-btn" onclick="closeAuthModal()" title="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div style="text-align:center; margin-bottom: 24px;">
+        <div style="width: 44px; height: 44px; margin: 0 auto 12px; background: linear-gradient(135deg, var(--cyan), var(--purple)); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #041019;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        </div>
+        <h3 style="font-size: 20px; font-weight: 800; color:#fff;">Sign In to ReZenOnance</h3>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Unlock your dedicated studio FLAC BitChord endpoint</p>
+      </div>
+
+      <button class="btn-google-login" style="width:100%; justify-content:center; margin-bottom: 20px;" onclick="loginWithGoogle()">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+        <span>Continue with Google</span>
+      </button>
+
+      <div style="display:flex; align-items:center; gap: 12px; margin-bottom: 20px;">
+        <div style="flex:1; height:1px; background:var(--border);"></div>
+        <span style="font-size:11px; text-transform:uppercase; color:var(--text-muted); letter-spacing:1px;">or email link</span>
+        <div style="flex:1; height:1px; background:var(--border);"></div>
+      </div>
+
+      <form onsubmit="handleEmailLogin(event)">
+        <input type="email" id="modal-email-input" class="auth-input" placeholder="audiophile@example.com" required autocomplete="email">
+        <button type="submit" class="btn-submit-email" id="modal-email-submit">Send Sign-In Magic Link</button>
+      </form>
+      <div id="modal-auth-msg" style="margin-top: 14px; font-size: 13px; text-align: center; display: none;"></div>
+    </div>
+  </div>
+
   <!-- QR Modal -->
   <div class="modal-overlay" id="qr-modal" onclick="if(event.target===this)closeQrModal()">
     <div class="modal-content">
@@ -2068,51 +2428,282 @@ footer a:hover {
     renderAmbient();
   }
 
-  // Slug & Manifest Management
-  var currentSlug = localStorage.getItem('rezen_user_slug') || 'rz-' + Math.random().toString(36).substring(2, 8);
-  localStorage.setItem('rezen_user_slug', currentSlug);
+  // Supabase Auth & Anti-Sybil Addon Management
+  var SUPABASE_URL = 'https://dtqqvjcpsyolfvudtonv.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0cXF2amNwc3lvbGZ2dWR0b252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjE1MjMsImV4cCI6MjA4ODUzNzUyM30.MHb8G9ESsEyifBGbQv4jH5mpOS5bkm3c6nkzvmXvk9s';
+  var supabase = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
+  var currentUser = null;
+  var currentSession = null;
+  var currentSlug = localStorage.getItem('rezen_user_slug') || 'rz-' + Math.random().toString(36).substring(2, 8);
+  var quotaPollingTimer = null;
   var slugInput = document.getElementById('slug-input');
   if (slugInput) slugInput.value = currentSlug;
+
+  window.openAuthModal = function() {
+    var m = document.getElementById('auth-modal');
+    if (m) m.style.display = 'flex';
+  };
+  window.closeAuthModal = function() {
+    var m = document.getElementById('auth-modal');
+    if (m) m.style.display = 'none';
+  };
+
+  window.loginWithGoogle = async function() {
+    if (!supabase) {
+      alert('Authentication service is initializing. Please refresh and try again.');
+      return;
+    }
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin }
+      });
+      if (error) alert(error.message);
+    } catch (err) {
+      alert('Login error: ' + (err.message || err));
+    }
+  };
+
+  window.handleEmailLogin = async function(e) {
+    e.preventDefault();
+    var emailInput = document.getElementById('modal-email-input');
+    var msgEl = document.getElementById('modal-auth-msg');
+    var submitBtn = document.getElementById('modal-email-submit');
+    if (!emailInput || !supabase) return;
+    var email = emailInput.value.trim();
+    if (!email) return;
+
+    submitBtn.disabled = true;
+    submitBtn.innerText = 'Sending magic link...';
+    if (msgEl) {
+      msgEl.style.display = 'block';
+      msgEl.style.color = 'var(--text-secondary)';
+      msgEl.innerText = 'Connecting to Supabase...';
+    }
+
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email,
+        options: { emailRedirectTo: window.location.origin }
+      });
+      if (error) {
+        if (msgEl) {
+          msgEl.style.color = 'var(--rose)';
+          msgEl.innerText = error.message;
+        }
+      } else {
+        if (msgEl) {
+          msgEl.style.color = 'var(--emerald)';
+          msgEl.innerText = 'Magic link sent! Check your email inbox to complete sign-in.';
+        }
+      }
+    } catch (err) {
+      if (msgEl) {
+        msgEl.style.color = 'var(--rose)';
+        msgEl.innerText = err.message || 'Login failed';
+      }
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerText = 'Send Sign-In Magic Link';
+    }
+  };
+
+  window.signOutUser = async function() {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+    currentUser = null;
+    currentSession = null;
+    if (quotaPollingTimer) clearInterval(quotaPollingTimer);
+    renderAuthState(null);
+  };
 
   function getManifestUrl() {
     return window.location.origin + '/u/' + currentSlug + '/manifest.json';
   }
 
   function updateAddonView() {
-    var url = getManifestUrl();
     var urlEl = document.getElementById('addon-url');
-    if (urlEl) urlEl.innerText = url;
-
     var installBtn = document.getElementById('install-bitchord-btn');
+
+    if (!currentUser) {
+      if (urlEl) urlEl.innerText = 'Sign in with Google or Email to unlock private endpoint';
+      if (installBtn) {
+        installBtn.href = '#';
+        installBtn.onclick = function(e) { e.preventDefault(); openAuthModal(); };
+      }
+      return;
+    }
+
+    var url = getManifestUrl();
+    if (urlEl) urlEl.innerText = url;
     if (installBtn) {
+      installBtn.onclick = null;
       installBtn.href = 'bitchord://install-addon?url=' + encodeURIComponent(url);
     }
   }
-  updateAddonView();
+
+  function renderQuotaMetrics(quota) {
+    if (!quota) return;
+    var streamsEl = document.getElementById('metric-streams');
+    var streamsBar = document.getElementById('metric-streams-bar');
+    if (streamsEl) streamsEl.innerText = quota.streamCount;
+    if (streamsBar) {
+      var pct = Math.min(100, Math.round((quota.streamCount / quota.maxStreams) * 100));
+      streamsBar.style.width = Math.max(2, pct) + '%';
+      if (pct > 90) streamsBar.className = 'progress-bar-fill fill-rose';
+      else if (pct > 70) streamsBar.className = 'progress-bar-fill fill-amber';
+      else streamsBar.className = 'progress-bar-fill fill-cyan';
+    }
+
+    var devicesEl = document.getElementById('metric-devices');
+    var devicesBar = document.getElementById('metric-devices-bar');
+    if (devicesEl) devicesEl.innerText = quota.activeDevices;
+    if (devicesBar) {
+      var devPct = Math.min(100, Math.round((quota.activeDevices / quota.maxDevices) * 100));
+      devicesBar.style.width = Math.max(10, devPct) + '%';
+    }
+
+    var ipsEl = document.getElementById('metric-ips');
+    var ipsBar = document.getElementById('metric-ips-bar');
+    if (ipsEl) ipsEl.innerText = quota.ipCount;
+    if (ipsBar) {
+      var ipPct = Math.min(100, Math.round((quota.ipCount / quota.maxIps) * 100));
+      ipsBar.style.width = Math.max(7, ipPct) + '%';
+    }
+  }
+
+  async function pollQuota(slug) {
+    try {
+      var res = await fetch('/api/user/quota/' + encodeURIComponent(slug));
+      if (res.ok) {
+        var data = await res.json();
+        if (data.quota) renderQuotaMetrics(data.quota);
+      }
+    } catch {}
+  }
+
+  async function claimUserAddon(user, token, customSlug) {
+    try {
+      var headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      var res = await fetch('/api/user/claim-addon', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ email: user.email, customSlug: customSlug })
+      });
+      var data = await res.json();
+      var banner = document.getElementById('anti-abuse-banner');
+      var textEl = document.getElementById('anti-abuse-text');
+
+      if (!res.ok) {
+        if (data.code === 'SYBIL_DETECTED' || res.status === 403) {
+          if (banner) banner.style.display = 'flex';
+          if (textEl) textEl.innerText = data.error || 'Anti-Abuse limit: Only 1 personal BitChord addon permitted per device.';
+        } else {
+          console.warn('Could not claim addon:', data.error);
+        }
+        return;
+      }
+
+      if (banner) banner.style.display = 'none';
+      currentSlug = data.slug;
+      localStorage.setItem('rezen_user_slug', currentSlug);
+      if (slugInput) slugInput.value = currentSlug;
+      updateAddonView();
+      if (data.quota) renderQuotaMetrics(data.quota);
+
+      if (quotaPollingTimer) clearInterval(quotaPollingTimer);
+      quotaPollingTimer = setInterval(function() { pollQuota(currentSlug); }, 30000);
+    } catch (err) {
+      console.error('Failed to claim addon link:', err);
+    }
+  }
+
+  function renderAuthState(user) {
+    currentUser = user;
+    var signinBtn = document.getElementById('header-signin-btn');
+    var userPill = document.getElementById('header-user-pill');
+    var userEmail = document.getElementById('header-user-email');
+    var userAvatar = document.getElementById('header-user-avatar');
+    var authGate = document.getElementById('auth-gate-box');
+    var verifiedBox = document.getElementById('verified-user-box');
+    var displayEmail = document.getElementById('auth-display-email');
+
+    if (user) {
+      if (signinBtn) signinBtn.style.display = 'none';
+      if (userPill) userPill.style.display = 'inline-flex';
+      if (userEmail) userEmail.innerText = user.email || 'User';
+      if (userAvatar) userAvatar.innerText = (user.email ? user.email[0].toUpperCase() : 'U');
+      if (authGate) authGate.style.display = 'none';
+      if (verifiedBox) verifiedBox.style.display = 'block';
+      if (displayEmail) displayEmail.innerText = user.email || '';
+      updateAddonView();
+    } else {
+      if (signinBtn) signinBtn.style.display = 'inline-flex';
+      if (userPill) userPill.style.display = 'none';
+      if (authGate) authGate.style.display = 'block';
+      if (verifiedBox) verifiedBox.style.display = 'none';
+      updateAddonView();
+    }
+  }
+
+  // Supabase Auth Session Bootstrap
+  if (supabase) {
+    supabase.auth.getSession().then(function(res) {
+      if (res.data && res.data.session) {
+        currentSession = res.data.session;
+        renderAuthState(res.data.session.user);
+        claimUserAddon(res.data.session.user, res.data.session.access_token);
+      } else {
+        renderAuthState(null);
+      }
+    });
+
+    supabase.auth.onAuthStateChange(function(event, session) {
+      currentSession = session;
+      if (session && session.user) {
+        renderAuthState(session.user);
+        claimUserAddon(session.user, session.access_token);
+        closeAuthModal();
+      } else {
+        renderAuthState(null);
+      }
+    });
+  } else {
+    renderAuthState(null);
+  }
 
   window.randomizeSlug = function() {
-    currentSlug = 'rz-' + Math.random().toString(36).substring(2, 8);
-    localStorage.setItem('rezen_user_slug', currentSlug);
-    if (slugInput) slugInput.value = currentSlug;
-    updateAddonView();
+    if (!currentUser) {
+      openAuthModal();
+      return;
+    }
+    var randomSuffix = Math.random().toString(36).substring(2, 8);
+    claimUserAddon(currentUser, currentSession ? currentSession.access_token : '', 'rz-' + randomSuffix);
   };
   window.generateNewLink = window.randomizeSlug;
 
   window.applyCustomSlug = function() {
+    if (!currentUser) {
+      openAuthModal();
+      return;
+    }
     if (!slugInput) return;
     var raw = slugInput.value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
     if (!raw) raw = 'rz-' + Math.random().toString(36).substring(2, 8);
-    currentSlug = raw;
-    slugInput.value = currentSlug;
-    localStorage.setItem('rezen_user_slug', currentSlug);
-    updateAddonView();
+    claimUserAddon(currentUser, currentSession ? currentSession.access_token : '', raw);
     var btn = document.getElementById('copy-btn-text');
     if (btn) btn.innerText = 'Token Saved!';
     setTimeout(function() { if (btn) btn.innerText = 'Copy URL'; }, 1800);
   };
 
   window.copyAddonLink = function() {
+    if (!currentUser) {
+      openAuthModal();
+      return;
+    }
     var url = getManifestUrl();
     navigator.clipboard.writeText(url).then(function() {
       var btn = document.getElementById('copy-btn-text');
@@ -2125,6 +2716,10 @@ footer a:hover {
 
   // QR Modal
   window.openQrModal = function() {
+    if (!currentUser) {
+      openAuthModal();
+      return;
+    }
     var modal = document.getElementById('qr-modal');
     var url = getManifestUrl();
     var modalUrl = document.getElementById('qr-modal-url');

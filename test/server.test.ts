@@ -89,3 +89,73 @@ test('GET /stream rejects tampered signed id', async () => {
   const res = await app.inject({ method: 'GET', url: `/stream/${tampered}` });
   assert.equal(res.statusCode, 404);
 });
+
+test('GET /api/auth/config returns Supabase config', async () => {
+  const res = await app.inject({ method: 'GET', url: '/api/auth/config' });
+  assert.equal(res.statusCode, 200);
+  const data = JSON.parse(res.payload);
+  assert.ok(data.supabaseUrl);
+  assert.ok(data.supabaseKey);
+});
+
+test('POST /api/user/claim-addon enforces anti-sybil and sets __rz_tracker cookie', async () => {
+  const randomEmail1 = `user_${Date.now()}_1@example.com`;
+  const randomEmail2 = `user_${Date.now()}_2@example.com`;
+
+  // 1. First claim with email 1
+  const res1 = await app.inject({
+    method: 'POST',
+    url: '/api/user/claim-addon',
+    payload: { email: randomEmail1, customSlug: `rz-test-${Date.now().toString(36)}` },
+  });
+  assert.equal(res1.statusCode, 200);
+  const data1 = JSON.parse(res1.payload);
+  assert.equal(data1.ok, true);
+  assert.ok(data1.slug);
+  assert.equal(data1.email, randomEmail1);
+
+  // Extract set-cookie
+  const setCookie = res1.headers['set-cookie'];
+  assert.ok(setCookie, 'Must set __rz_tracker cookie');
+  const cookieHeader = Array.isArray(setCookie) ? setCookie[0] : setCookie;
+  const trackerMatch = cookieHeader.match(/__rz_tracker=([^;]+)/);
+  assert.ok(trackerMatch, 'Tracker cookie present');
+  const trackerCookie = trackerMatch[0];
+
+  // 2. Repeat claim with SAME email and SAME cookie -> succeeds and returns existing slug
+  const res2 = await app.inject({
+    method: 'POST',
+    url: '/api/user/claim-addon',
+    headers: { cookie: trackerCookie },
+    payload: { email: randomEmail1 },
+  });
+  assert.equal(res2.statusCode, 200);
+  const data2 = JSON.parse(res2.payload);
+  assert.equal(data2.ok, true);
+  assert.equal(data2.slug, data1.slug);
+
+  // 3. Sybil attempt: SAME cookie, DIFFERENT email -> must reject with 403 SYBIL_DETECTED
+  const res3 = await app.inject({
+    method: 'POST',
+    url: '/api/user/claim-addon',
+    headers: { cookie: trackerCookie },
+    payload: { email: randomEmail2 },
+  });
+  assert.equal(res3.statusCode, 403);
+  const data3 = JSON.parse(res3.payload);
+  assert.equal(data3.ok, false);
+  assert.equal(data3.code, 'SYBIL_DETECTED');
+  assert.match(data3.error, /Device already registered to another account/);
+
+  // 4. Check quota endpoint
+  const quotaRes = await app.inject({
+    method: 'GET',
+    url: `/api/user/quota/${data1.slug}`,
+  });
+  assert.equal(quotaRes.statusCode, 200);
+  const quotaData = JSON.parse(quotaRes.payload);
+  assert.equal(quotaData.ok, true);
+  assert.equal(quotaData.quota.maxStreams, 300);
+  assert.equal(quotaData.quota.maxDevices, 2);
+  assert.equal(quotaData.quota.maxIps, 15);
+});

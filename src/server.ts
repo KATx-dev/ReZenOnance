@@ -1,16 +1,39 @@
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { randomBytes } from 'node:crypto';
 import Fastify from 'fastify';
+import fastifyCookie from '@fastify/cookie';
 import { loadConfig, type Config } from './config.js';
 import { homePage, legacyTvPage } from './home.js';
 import { TtlCache } from './cache.js';
 import { AppError, badRequest, notFound } from './errors.js';
 import { normalizeTrack, streamResponse, upstreamIdFromPublicId } from './normalize.js';
 import { createProvider, createSourceProvider, type IsolatedSource } from './providers/index.js';
+import { AddonDatabase } from './db.js';
 import type { QobuzProvider, Quality, PublicTrack } from './types.js';
 
 const config = loadConfig();
 const app = Fastify({ logger: { redact: ['req.headers.authorization', 'req.headers.cookie', '*.url'] } });
+const db = new AddonDatabase(config);
+
+await app.register(fastifyCookie, {
+  secret: config.idSecret,
+});
+
+app.addHook('onRequest', async (request, reply) => {
+  let tracker = request.cookies['__rz_tracker'];
+  if (!tracker || tracker.length < 16) {
+    tracker = randomBytes(24).toString('hex');
+    reply.setCookie('__rz_tracker', tracker, {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 365 * 24 * 60 * 60, // 1 year
+    });
+    request.cookies['__rz_tracker'] = tracker;
+  }
+});
 
 const manifests = {
   root: { id: 'com.bitchord.qobuz', name: 'Qobuz', version: '1.0.0' },
@@ -38,6 +61,88 @@ app.get('/api/telemetry', async () => ({
     { name: 'Legacy Qobuz-DL', route: '/a', status: 'unauthorized', quality: 'MP3', latency: null },
   ],
 }));
+
+app.get('/api/auth/config', async () => ({
+  supabaseUrl: config.supabaseUrl,
+  supabaseKey: config.supabaseKey,
+}));
+
+app.get('/api/auth/me', async (request, reply) => {
+  const authHeader = request.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return reply.send({ authenticated: false, user: null });
+  }
+  const token = authHeader.substring(7).trim();
+  const verified = await db.verifyUser(token);
+  if (!verified) {
+    return reply.send({ authenticated: false, user: null });
+  }
+  const addon = await db.getAddonByEmail(verified.email);
+  return reply.send({
+    authenticated: true,
+    user: verified,
+    addon: addon ? { slug: addon.addon_slug, dailyLimit: addon.daily_limit, isRevoked: addon.is_revoked } : null,
+  });
+});
+
+app.post<{ Body?: { email?: string; customSlug?: string } }>('/api/user/claim-addon', async (request, reply) => {
+  const tracker = request.cookies['__rz_tracker'] || randomBytes(24).toString('hex');
+  const fingerprint = db.hashDeviceFingerprint(tracker, config.idSecret);
+
+  const authHeader = request.headers.authorization;
+  let userId: string | undefined;
+  let userEmail: string | undefined;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7).trim();
+    const verified = await db.verifyUser(token);
+    if (verified) {
+      userId = verified.id;
+      userEmail = verified.email;
+    }
+  }
+
+  if (!userEmail && request.body?.email) {
+    const candidate = request.body.email.trim().toLowerCase();
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(candidate)) {
+      userEmail = candidate;
+    }
+  }
+
+  if (!userEmail) {
+    return reply.code(401).send({ error: 'Authentication required. Please sign in with Google or Email.' });
+  }
+
+  try {
+    const { addon, isNew } = await db.claimAddon({
+      userId,
+      email: userEmail,
+      deviceFingerprint: fingerprint,
+      customSlug: request.body?.customSlug,
+    });
+    const quota = await db.getQuotaStatus(addon.addon_slug);
+    return reply.send({
+      ok: true,
+      isNew,
+      slug: addon.addon_slug,
+      email: addon.email,
+      quota,
+    });
+  } catch (err: any) {
+    const message = err?.message || 'Could not claim addon';
+    if (message.includes('Device already registered to another account')) {
+      return reply.code(403).send({ ok: false, error: message, code: 'SYBIL_DETECTED' });
+    }
+    return reply.code(400).send({ ok: false, error: message });
+  }
+});
+
+app.get<{ Params: { slug: string } }>('/api/user/quota/:slug', async (request, reply) => {
+  const slug = request.params.slug;
+  if (!slug) throw badRequest('slug is required');
+  const quota = await db.getQuotaStatus(slug);
+  return reply.send({ ok: true, quota });
+});
 
 registerAddon('', createProvider(config), manifests.root);
 registerAddon('/u/:userSlug', createProvider(config), manifests.root);
@@ -81,7 +186,15 @@ function registerAddon(prefix: string, provider: QobuzProvider, manifest: { id: 
     }
   });
 
-  app.get<{ Params: { id: string }; Querystring: { quality?: string; atmos?: string } }>(route('/stream/:id'), async (request, reply) => {
+  app.get<{ Params: { id: string; userSlug?: string }; Querystring: { quality?: string; atmos?: string } }>(route('/stream/:id'), async (request, reply) => {
+    if (request.params.userSlug) {
+      const clientIp = (request.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || request.ip;
+      const userAgent = request.headers['user-agent'] || 'unknown';
+      const access = await db.recordStreamAccess(request.params.userSlug, clientIp, userAgent);
+      if (!access.allowed) {
+        return reply.code(429).send({ error: access.reason || 'Playback quota exceeded' });
+      }
+    }
     const quality = parseQuality(request.query.quality);
     const atmos = request.query.atmos ?? 'auto';
     const id = request.params.id;

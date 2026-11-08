@@ -16,6 +16,8 @@ export interface Config {
   eljohnzcBaseUrl?: string;
   instableBaseUrl?: string;
   heisenbergBaseUrl?: string;
+  supabaseUrl: string;
+  supabaseKey: string;
 }
 
 const positiveInt = (name: string, fallback: number): number => {
@@ -49,5 +51,7 @@ export function loadConfig(): Config {
     eljohnzcBaseUrl: process.env.ELJOHNZC_BASE_URL ?? 'https://eljohnzc-addon.de.deplexo.com/59efe06a96',
     instableBaseUrl: process.env.INSTABLE_BASE_URL ?? 'https://arcod.xyz',
     heisenbergBaseUrl: process.env.HEISENBERG_BASE_URL ?? 'https://heisenbergbackaaahh.de.deplexo.com/a',
+    supabaseUrl: process.env.SUPABASE_URL ?? 'https://dtqqvjcpsyolfvudtonv.supabase.co',
+    supabaseKey: process.env.SUPABASE_KEY ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0cXF2amNwc3lvbGZ2dWR0b252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjE1MjMsImV4cCI6MjA4ODUzNzUyM30.MHb8G9ESsEyifBGbQv4jH5mpOS5bkm3c6nkzvmXvk9s',
   };
 }
