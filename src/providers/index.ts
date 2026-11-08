@@ -4,7 +4,7 @@ import { StubQobuzProvider } from './stub.js';
 import { HttpQobuzProvider } from './http.js';
 import { QobuzDlProvider } from './qobuzdl.js';
 import { LastBabeProvider } from './lastbabe.js';
-import { createRacingProvider } from './racing.js';
+import { RacingProvider, createRacingProvider } from './racing.js';
 import { MonochromeProvider } from './monochrome.js';
 import { RemoteAddonProvider } from './remote-addon.js';
 import { InstableProvider } from './instable.js';
@@ -14,15 +14,10 @@ export type IsolatedSource = 'qobuzdl' | 'lastbabe' | 'monochrome' | 'deezer' | 
 export function createProvider(config: Config): QobuzProvider {
   if (config.provider === 'qobuzdl') return new QobuzDlProvider(config);
   if (config.provider === 'multi') {
-    return createRacingProvider(
-      new QobuzDlProvider(config),
-      new LastBabeProvider(config),
-      new MonochromeProvider(config),
-      new RemoteAddonProvider(config),
-      new RemoteAddonProvider(config, config.eljohnzcBaseUrl),
-      new InstableProvider(config),
-      new RemoteAddonProvider(config, config.heisenbergBaseUrl),
-    );
+    return new RacingProvider([
+      { name: 'heisenberg', provider: new RemoteAddonProvider(config, config.heisenbergBaseUrl) },
+      { name: 'instable', provider: new InstableProvider(config) },
+    ]);
   }
   if (config.provider === 'http') return new HttpQobuzProvider(config);
   return new StubQobuzProvider();
