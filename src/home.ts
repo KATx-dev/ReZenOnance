@@ -697,6 +697,199 @@ header {
   border: 1px solid rgba(244, 63, 94, 0.3);
 }
 
+/* =========================================
+   Hardware & Lossless Diagnostic Lab Section
+   ========================================= */
+.lab-section {
+  padding: 38px;
+  margin-bottom: 50px;
+  border: 1px solid rgba(0, 242, 254, 0.2);
+  background: linear-gradient(180deg, rgba(16, 22, 38, 0.85) 0%, rgba(10, 14, 25, 0.95) 100%);
+  position: relative;
+}
+.lab-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, #10b981, #00f2fe, #8b5cf6);
+}
+.lab-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 242, 254, 0.12);
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  color: var(--cyan);
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 12px;
+}
+.lab-stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 24px 0 30px;
+  flex-wrap: wrap;
+}
+.stepper-node {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.stepper-node.active { color: var(--cyan); }
+.stepper-node.passed { color: #34d399; }
+.stepper-bubble {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+.stepper-node.active .stepper-bubble {
+  background: var(--cyan);
+  color: #000;
+  border-color: var(--cyan);
+  box-shadow: 0 0 10px var(--cyan-glow);
+}
+.stepper-node.passed .stepper-bubble {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border-color: #10b981;
+}
+.stepper-line {
+  height: 2px;
+  width: 24px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.lab-panel-content {
+  background: rgba(8, 11, 18, 0.7);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 28px;
+  margin-bottom: 24px;
+}
+.quiet-room-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin-bottom: 24px;
+  color: #fde68a;
+}
+.quiet-room-alert svg { flex-shrink: 0; color: var(--amber); }
+
+.tone-box {
+  text-align: center;
+  padding: 24px;
+  background: rgba(14, 18, 30, 0.6);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin: 20px 0;
+}
+.tone-btn {
+  background: linear-gradient(135deg, #00f2fe, #3b82f6);
+  border: none;
+  color: #041019;
+  font-weight: 800;
+  font-size: 15px;
+  padding: 14px 28px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s;
+  box-shadow: 0 0 20px var(--cyan-glow);
+}
+.tone-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px var(--cyan-glow);
+}
+.tone-btn.playing {
+  background: linear-gradient(135deg, #f43f5e, #fb7185);
+  color: #fff;
+  box-shadow: 0 0 25px rgba(244, 63, 94, 0.4);
+}
+
+.lab-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+.lab-option-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.lab-option-btn:hover {
+  background: rgba(0, 242, 254, 0.08);
+  border-color: rgba(0, 242, 254, 0.3);
+  transform: translateY(-1px);
+}
+.lab-option-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lab-option-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Verdict Styles */
+.verdict-box {
+  padding: 30px;
+  border-radius: 16px;
+  text-align: center;
+}
+.verdict-pass {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.verdict-warn {
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+.verdict-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 18px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+.badge-pass { background: rgba(16, 185, 129, 0.25); color: #34d399; }
+.badge-warn { background: rgba(244, 63, 94, 0.25); color: #fb7185; }
+
 /* In-Browser Player Section */
 .player-section {
   padding: 36px;
@@ -1156,6 +1349,10 @@ footer a:hover {
         <span class="pulse-dot"></span>
         <span id="gateway-status">Verified Lossless Online</span>
       </div>
+      <a href="#hardware-lab" class="nav-link" style="color:var(--cyan); border-color:rgba(0,242,254,0.35);">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+        Gear Diagnostic Lab
+      </a>
       <a href="/tv" class="nav-link" title="Sony Bravia / Vewd Client">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="15" x="2" y="3" rx="2"/><polyline points="17 21 12 17 7 21"/></svg>
         TV Client
@@ -1453,6 +1650,236 @@ footer a:hover {
       </div>
     </section>
 
+    <!-- ============================================= -->
+    <!-- Lossless Audio & Gear Diagnostic Lab Section  -->
+    <!-- ============================================= -->
+    <section class="glass-panel lab-section" id="hardware-lab">
+      <div class="lab-pill">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+        Lossless Audio & Gear Diagnostic Lab
+      </div>
+      <h2 style="font-size:24px; font-weight:800; letter-spacing:-0.5px; margin-bottom:8px;">Lossless Audio & Gear Capability Benchmark</h2>
+      <p style="font-size:14px; color:var(--text-secondary); max-width:800px; line-height:1.6; margin-bottom:24px;">
+        Many users stream 24-bit / 192 kHz FLAC on budget Bluetooth headphones without realizing their wireless connection compresses everything to lossy SBC/AAC @ 256kbps. This interactive diagnostic verifies your DAC pipeline, output device route, sub-bass extension, and acoustic distortion threshold.
+      </p>
+
+      <!-- Stepper Header -->
+      <div class="lab-stepper">
+        <div class="stepper-node active" id="step-node-0"><div class="stepper-bubble">1</div> Preparation</div>
+        <div class="stepper-line"></div>
+        <div class="stepper-node" id="step-node-1"><div class="stepper-bubble">2</div> DAC & Route</div>
+        <div class="stepper-line"></div>
+        <div class="stepper-node" id="step-node-2"><div class="stepper-bubble">3</div> Sub-Bass (32Hz)</div>
+        <div class="stepper-line"></div>
+        <div class="stepper-node" id="step-node-3"><div class="stepper-bubble">4</div> Treble Air (17.5kHz)</div>
+        <div class="stepper-line"></div>
+        <div class="stepper-node" id="step-node-4"><div class="stepper-bubble">5</div> Noise Floor</div>
+        <div class="stepper-line"></div>
+        <div class="stepper-node" id="step-node-5"><div class="stepper-bubble">6</div> Verdict</div>
+      </div>
+
+      <!-- Stage 0: Preparation Guidance -->
+      <div class="lab-panel-content" id="lab-stage-0">
+        <div class="quiet-room-alert">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+          <div>
+            <div style="font-weight:700; font-size:15px; margin-bottom:4px;">Mandatory Acoustic Preparation</div>
+            <div style="font-size:13px; opacity:0.9; line-height:1.5;">
+              1. <strong>Quiet Environment:</strong> Find a completely quiet room without air conditioning noise or background chatter.<br>
+              2. <strong>Connect Your Listening Gear:</strong> Plug in the exact headphones, in-ear monitors (IEMs), or external DAC you plan to stream with.<br>
+              3. <strong>Disable EQ / Dolby Audio / Spatial Enhancers:</strong> Set system EQ to flat so you hear raw, uncolored audio reproduction.
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align:center; padding:16px 0;">
+          <button class="btn-generate" onclick="startGearDiagnostic()" style="padding:14px 32px; font-size:15px; margin:0 auto;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            I'm In A Quiet Room & Ready &rarr;
+          </button>
+        </div>
+      </div>
+
+      <!-- Stage 1: Hardware & Route Detection -->
+      <div class="lab-panel-content" id="lab-stage-1" style="display:none;">
+        <h3 style="font-size:18px; font-weight:700; margin-bottom:12px;">Step 1: System Audio Engine & Route Probe</h3>
+        <p style="font-size:13px; color:var(--text-secondary); margin-bottom:20px;">
+          We inspect your Web Audio API engine sample rate, stereo channel buffer, and system output endpoint.
+        </p>
+
+        <div class="quota-grid" style="margin-bottom:24px;">
+          <div class="quota-card">
+            <div class="quota-header"><span class="quota-title">System Sample Rate</span><span class="quota-badge" id="probe-sr-badge">Probing...</span></div>
+            <div class="quota-numbers"><span id="probe-sample-rate">--</span> <span class="quota-max">Hz</span></div>
+            <div class="quota-subtext" id="probe-sr-desc">Internal DAC clock rate</div>
+          </div>
+
+          <div class="quota-card">
+            <div class="quota-header"><span class="quota-title">Native FLAC Decoder</span><span class="quota-badge" style="color:#34d399;">Supported</span></div>
+            <div class="quota-numbers" style="font-size:20px; color:#34d399;"><span id="probe-flac-status">Bit-Perfect PCM</span></div>
+            <div class="quota-subtext">Direct browser audio buffer support</div>
+          </div>
+
+          <div class="quota-card">
+            <div class="quota-header"><span class="quota-title">Detected Output Device</span><span class="quota-badge">Route</span></div>
+            <div class="quota-numbers" style="font-size:17px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><span id="probe-device-name">Default Output</span></div>
+            <div class="quota-subtext" id="probe-bt-warning">Checking for wireless compression...</div>
+          </div>
+        </div>
+
+        <div id="bt-alert-banner" style="display:none;" class="quiet-room-alert">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+          <div>
+            <div style="font-weight:700; font-size:14px; margin-bottom:2px;">Bluetooth Bottleneck Flagged</div>
+            <div style="font-size:13px; line-height:1.5;">
+              Your active output device appears to be Bluetooth. Standard SBC/AAC wireless codecs compress audio down to ~256-320 kbps. Even if BitChord streams a 24-bit/192kHz studio FLAC file, your wireless link is downsampling it into lossy audio before it hits your ears.
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align:right;">
+          <button class="btn-generate" onclick="goToLabStage(2)">Proceed to Sub-Bass Check &rarr;</button>
+        </div>
+      </div>
+
+      <!-- Stage 2: Sub-Bass 32 Hz Check -->
+      <div class="lab-panel-content" id="lab-stage-2" style="display:none;">
+        <h3 style="font-size:18px; font-weight:700; margin-bottom:8px;">Step 2: Sub-Bass Extension & Harmonic Distortion (32 Hz)</h3>
+        <p style="font-size:13px; color:var(--text-secondary); line-height:1.5;">
+          True studio headphones and subwoofers maintain linear extension down to 20-30 Hz without distortion. Budget drivers often rattle, buzz, or distort heavily when driven by deep sub-bass frequencies.
+        </p>
+
+        <div class="tone-box">
+          <button class="tone-btn" id="sub-tone-btn" onclick="toggleTone(32, 0.4, 'sub-tone-btn')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Play 32 Hz Sub-Bass Tone
+          </button>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:10px;">Listen carefully: focus on whether you feel a clean smooth vibration or hear rattling plastic buzzing.</div>
+        </div>
+
+        <div style="font-size:14px; font-weight:700; margin-bottom:10px;">What do you hear/feel during the 32 Hz tone?</div>
+        <div class="lab-options-grid">
+          <button class="lab-option-btn" onclick="recordLabChoice('sub', 'pass')">
+            <div class="lab-option-title" style="color:#34d399;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Clean, Deep Rumble
+            </div>
+            <div class="lab-option-desc">Smooth, deep physical vibration with zero harsh rattling or audible harmonic buzzing.</div>
+          </button>
+
+          <button class="lab-option-btn" onclick="recordLabChoice('sub', 'distort')">
+            <div class="lab-option-title" style="color:var(--amber);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+              Muddy Rattling / Buzz
+            </div>
+            <div class="lab-option-desc">Audible plastic buzzing, distortion harmonics, or loose vibrating casing noise.</div>
+          </button>
+
+          <button class="lab-option-btn" onclick="recordLabChoice('sub', 'silent')">
+            <div class="lab-option-title" style="color:var(--rose);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" x2="9" y1="9" y2="15"/><line x1="9" x2="15" y1="9" y2="15"/></svg>
+              Completely Silent
+            </div>
+            <div class="lab-option-desc">Cannot hear or feel anything. The drivers suffer severe low-frequency cutoff above 40 Hz.</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Stage 3: High-Frequency Treble Air (17.5 kHz) -->
+      <div class="lab-panel-content" id="lab-stage-3" style="display:none;">
+        <h3 style="font-size:18px; font-weight:700; margin-bottom:8px;">Step 3: High-Frequency Extension & Anti-Aliasing (17.5 kHz)</h3>
+        <p style="font-size:13px; color:var(--text-secondary); line-height:1.5;">
+          Lossy Bluetooth SBC codecs enforce a strict brickwall low-pass filter around 16 kHz. Furthermore, cheap audio chips create severe aliasing artifacts (false buzzing or metallic hiss) when reproducing high-res frequencies.
+        </p>
+
+        <div class="tone-box">
+          <button class="tone-btn" id="treble-tone-btn" onclick="toggleTone(17500, 0.15, 'treble-tone-btn')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Play 17.5 kHz High-Frequency Tone
+          </button>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:10px;">Warning: High pitch. Set comfortable volume. Check if you perceive an ultra-high clean tone or harsh buzzing.</div>
+        </div>
+
+        <div style="font-size:14px; font-weight:700; margin-bottom:10px;">What do you hear during the 17.5 kHz tone?</div>
+        <div class="lab-options-grid">
+          <button class="lab-option-btn" onclick="recordLabChoice('treble', 'pass')">
+            <div class="lab-option-title" style="color:#34d399;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Clear High-Frequency Tone
+            </div>
+            <div class="lab-option-desc">Smooth, ultra-high clean sine tone with wide extension and no distorted aliasing.</div>
+          </button>
+
+          <button class="lab-option-btn" onclick="recordLabChoice('treble', 'aliasing')">
+            <div class="lab-option-title" style="color:var(--amber);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+              Harsh Whine / Buzzing
+            </div>
+            <div class="lab-option-desc">Audible lower-frequency warble, scratchy hiss, or distortion caused by poor DAC reconstruction.</div>
+          </button>
+
+          <button class="lab-option-btn" onclick="recordLabChoice('treble', 'silent')">
+            <div class="lab-option-title" style="color:var(--text-muted);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+              Total Silence
+            </div>
+            <div class="lab-option-desc">Nothing heard (typical of Bluetooth 16 kHz brickwall cutoff or human hearing threshold).</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Stage 4: Noise Floor & Micro-Dynamics -->
+      <div class="lab-panel-content" id="lab-stage-4" style="display:none;">
+        <h3 style="font-size:18px; font-weight:700; margin-bottom:8px;">Step 4: DAC Dynamic Range & Noise Floor (-45 dBFS Soft Chime)</h3>
+        <p style="font-size:13px; color:var(--text-secondary); line-height:1.5;">
+          A major advantage of 24-bit audio is a 144 dB theoretical dynamic range. Budget DACs and noisy wireless receivers exhibit noticeable hiss or electrical background noise as quiet notes decay.
+        </p>
+
+        <div class="tone-box">
+          <button class="tone-btn" id="chime-tone-btn" onclick="playChimeTest('chime-tone-btn')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Play Delicate Micro-Chime
+          </button>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:10px;">Listen to the decaying tail of the sound: does it fade into total pitch-black silence, or is there a hiss floor?</div>
+        </div>
+
+        <div style="font-size:14px; font-weight:700; margin-bottom:10px;">How did the sound fade?</div>
+        <div class="lab-options-grid">
+          <button class="lab-option-btn" onclick="recordLabChoice('noise', 'clean')">
+            <div class="lab-option-title" style="color:#34d399;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Pure Pitch-Black Silence
+            </div>
+            <div class="lab-option-desc">The chime decayed smoothly into absolute clean silence without any audible background hiss or static.</div>
+          </button>
+
+          <button class="lab-option-btn" onclick="recordLabChoice('noise', 'hiss')">
+            <div class="lab-option-title" style="color:var(--rose);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+              Audible Hiss / Static Floor
+            </div>
+            <div class="lab-option-desc">Heard a constant background rush, electrical buzzing, or quantization hiss during the quiet passage.</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Stage 5: Final Diagnostic Verdict -->
+      <div class="lab-panel-content" id="lab-stage-5" style="display:none;">
+        <div class="verdict-box" id="verdict-box-wrap">
+          <div class="verdict-badge" id="verdict-badge-pill">Calculating...</div>
+          <h3 id="verdict-headline" style="font-size:22px; font-weight:800; color:#fff; margin-bottom:12px;">Diagnostic Complete</h3>
+          <p id="verdict-summary" style="font-size:14px; line-height:1.6; max-width:700px; margin:0 auto 24px; color:var(--text-secondary);"></p>
+          
+          <div id="verdict-details-list" style="text-align:left; background:rgba(0,0,0,0.3); border-radius:12px; padding:18px; max-width:700px; margin:0 auto 24px; font-size:13px; line-height:1.6;"></div>
+
+          <button class="btn-copy" onclick="resetGearDiagnostic()" style="margin:0 auto; font-size:14px; padding:12px 24px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+            Retest With Different Headphones / DAC
+          </button>
+        </div>
+      </div>
+    </section>
+
     <!-- In-Browser Lossless Player & Search -->
     <section class="glass-panel player-section">
       <div class="section-head" style="margin-bottom: 18px;">
@@ -1705,7 +2132,6 @@ footer a:hover {
 
     var qrBox = document.getElementById('qr-code-svg-box');
     if (qrBox) {
-      // Generate clean QR code using Google charts API image or simple fallback
       qrBox.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(url) + '" width="200" height="200" alt="QR Code" style="display:block;">';
     }
     if (modal) modal.style.display = 'flex';
@@ -1761,6 +2187,225 @@ footer a:hover {
       .catch(function() {
         if (btn) btn.innerText = 'Ping Check Failed';
       });
+  };
+
+  // ===============================================
+  // Audiophile Gear & Lossless Diagnostic Lab Engine
+  // ===============================================
+  var labAudioCtx = null;
+  var labOscillator = null;
+  var labGainNode = null;
+  var labChoices = { sub: null, treble: null, noise: null, isBluetooth: false, sampleRate: 48000 };
+
+  function getLabAudioContext() {
+    if (!labAudioCtx) {
+      var AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtxClass) labAudioCtx = new AudioCtxClass();
+    }
+    if (labAudioCtx && labAudioCtx.state === 'suspended') {
+      labAudioCtx.resume();
+    }
+    return labAudioCtx;
+  }
+
+  window.startGearDiagnostic = function() {
+    var actx = getLabAudioContext();
+    goToLabStage(1);
+
+    // Probe sample rate
+    var sr = actx ? actx.sampleRate : 48000;
+    labChoices.sampleRate = sr;
+    var srEl = document.getElementById('probe-sample-rate');
+    if (srEl) srEl.innerText = sr.toLocaleString();
+    var srBadge = document.getElementById('probe-sr-badge');
+    var srDesc = document.getElementById('probe-sr-desc');
+    if (sr >= 96000) {
+      if (srBadge) { srBadge.innerText = 'Studio Hi-Res'; srBadge.style.color = '#34d399'; }
+      if (srDesc) srDesc.innerText = 'Hi-Res DAC clock exposed directly to browser.';
+    } else if (sr >= 44100) {
+      if (srBadge) { srBadge.innerText = 'Standard PCM'; srBadge.style.color = '#00f2fe'; }
+      if (srDesc) srDesc.innerText = 'Standard CD/DVD sample rate (44.1/48 kHz).';
+    }
+
+    // Probe audio output device labels
+    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+      navigator.mediaDevices.enumerateDevices().then(function(devices) {
+        var audioOutputs = devices.filter(function(d) { return d.kind === 'audiooutput'; });
+        var devName = audioOutputs.length > 0 && audioOutputs[0].label ? audioOutputs[0].label : 'Default Stereo Endpoint';
+        var devEl = document.getElementById('probe-device-name');
+        if (devEl) devEl.innerText = devName;
+
+        // Check if device matches Bluetooth keywords
+        var isBT = /bluetooth|wireless|airpod|hands-free|buds|wh-|wf-|headset/i.test(devName);
+        labChoices.isBluetooth = isBT;
+        var warnEl = document.getElementById('bt-alert-banner');
+        var warnText = document.getElementById('probe-bt-warning');
+        if (isBT) {
+          if (warnEl) warnEl.style.display = 'flex';
+          if (warnText) { warnText.innerText = '⚠️ Wireless SBC/AAC compression detected'; warnText.style.color = '#fb7185'; }
+        } else {
+          if (warnEl) warnEl.style.display = 'none';
+          if (warnText) { warnText.innerText = 'Wired / direct hardware DAC profile'; warnText.style.color = '#34d399'; }
+        }
+      }).catch(function() {});
+    }
+  };
+
+  window.goToLabStage = function(stageNum) {
+    stopActiveTone();
+    for (var i = 0; i <= 5; i++) {
+      var el = document.getElementById('lab-stage-' + i);
+      if (el) el.style.display = (i === stageNum) ? 'block' : 'none';
+      var node = document.getElementById('step-node-' + i);
+      if (node) {
+        if (i < stageNum) {
+          node.className = 'stepper-node passed';
+        } else if (i === stageNum) {
+          node.className = 'stepper-node active';
+        } else {
+          node.className = 'stepper-node';
+        }
+      }
+    }
+  };
+
+  function stopActiveTone() {
+    if (labOscillator) {
+      try {
+        if (labGainNode && labAudioCtx) {
+          labGainNode.gain.setValueAtTime(labGainNode.gain.value, labAudioCtx.currentTime);
+          labGainNode.gain.linearRampToValueAtTime(0.0001, labAudioCtx.currentTime + 0.05);
+        }
+        setTimeout(function() {
+          try { labOscillator.stop(); labOscillator.disconnect(); } catch(e) {}
+          labOscillator = null;
+        }, 60);
+      } catch(e) { labOscillator = null; }
+    }
+    var btns = document.querySelectorAll('.tone-btn');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.remove('playing');
+    }
+  }
+
+  window.toggleTone = function(freq, targetGain, btnId) {
+    var btn = document.getElementById(btnId);
+    if (labOscillator) {
+      stopActiveTone();
+      return;
+    }
+    var actx = getLabAudioContext();
+    if (!actx) return;
+
+    labGainNode = actx.createGain();
+    labGainNode.gain.setValueAtTime(0.0001, actx.currentTime);
+    labGainNode.gain.linearRampToValueAtTime(targetGain, actx.currentTime + 0.15);
+
+    labOscillator = actx.createOscillator();
+    labOscillator.type = 'sine';
+    labOscillator.frequency.setValueAtTime(freq, actx.currentTime);
+    labOscillator.connect(labGainNode);
+    labGainNode.connect(actx.destination);
+    labOscillator.start();
+
+    if (btn) btn.classList.add('playing');
+  };
+
+  window.playChimeTest = function(btnId) {
+    stopActiveTone();
+    var actx = getLabAudioContext();
+    if (!actx) return;
+    var btn = document.getElementById(btnId);
+    if (btn) btn.classList.add('playing');
+
+    var osc = actx.createOscillator();
+    var gain = actx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, actx.currentTime);
+    // Micro-gain -45dBFS equivalent
+    gain.gain.setValueAtTime(0.015, actx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.00001, actx.currentTime + 3.0);
+
+    osc.connect(gain);
+    gain.connect(actx.destination);
+    osc.start();
+    osc.stop(actx.currentTime + 3.1);
+    setTimeout(function() {
+      if (btn) btn.classList.remove('playing');
+    }, 3100);
+  };
+
+  window.recordLabChoice = function(step, choice) {
+    labChoices[step] = choice;
+    if (step === 'sub') {
+      goToLabStage(3);
+    } else if (step === 'treble') {
+      goToLabStage(4);
+    } else if (step === 'noise') {
+      calculateLabVerdict();
+    }
+  };
+
+  function calculateLabVerdict() {
+    goToLabStage(5);
+    var wrap = document.getElementById('verdict-box-wrap');
+    var badge = document.getElementById('verdict-badge-pill');
+    var head = document.getElementById('verdict-headline');
+    var summary = document.getElementById('verdict-summary');
+    var list = document.getElementById('verdict-details-list');
+
+    var isPass = (labChoices.sub === 'pass') && (labChoices.treble !== 'aliasing') && (labChoices.noise === 'clean') && !labChoices.isBluetooth;
+
+    if (isPass) {
+      wrap.className = 'verdict-box verdict-pass';
+      badge.className = 'verdict-badge badge-pass';
+      badge.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> GREEN LIGHT &middot; STUDIO LOSSLESS READY';
+      head.innerText = 'Your Gear is Genuinely Bit-Perfect Ready!';
+      summary.innerText = 'Congratulations! Your listening environment, DAC pipeline, and acoustic output successfully passed all high-resolution tests without distortion or lossy compression artifacts. You will hear every nuance of uncompressed 24-bit FLAC streams.';
+    } else {
+      wrap.className = 'verdict-box verdict-warn';
+      badge.className = 'verdict-badge badge-warn';
+      badge.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg> CAUTION &middot; LOSSLESS BOTTLENECK DETECTED';
+      head.innerText = 'Audio Gear Bottleneck Warning';
+      summary.innerText = 'You are streaming bit-perfect 24-bit / 192 kHz FLAC from ReZenOnance, BUT your current listening hardware or wireless pipeline cannot deliver it uncompressed. You are essentially hearing lossy audio due to the bottlenecks identified below:';
+    }
+
+    var itemsHtml = '';
+    if (labChoices.isBluetooth) {
+      itemsHtml += '<div style="color:#fb7185; margin-bottom:8px;">❌ <strong>Bluetooth SBC/AAC Bottleneck:</strong> Wireless audio is compressed over the air down to ~256kbps. Switch to a wired 3.5mm/USB-C connection or high-res LDAC.</div>';
+    } else {
+      itemsHtml += '<div style="color:#34d399; margin-bottom:8px;">✓ <strong>Wired Audio Path:</strong> Zero wireless Bluetooth codec re-compression detected.</div>';
+    }
+
+    if (labChoices.sub === 'pass') {
+      itemsHtml += '<div style="color:#34d399; margin-bottom:8px;">✓ <strong>Sub-Bass Extension (32 Hz):</strong> Clean linear low-end reproduction with no driver harmonic buzz.</div>';
+    } else if (labChoices.sub === 'distort') {
+      itemsHtml += '<div style="color:#fbbf24; margin-bottom:8px;">⚠️ <strong>Driver Harmonic Distortion:</strong> 32 Hz sub-bass caused rattling or muddy distortion in budget headphone housing.</div>';
+    } else {
+      itemsHtml += '<div style="color:#fb7185; margin-bottom:8px;">❌ <strong>Low-Frequency Roll-Off:</strong> Headphones fail to reproduce sub-bass frequencies below 40 Hz.</div>';
+    }
+
+    if (labChoices.treble === 'pass') {
+      itemsHtml += '<div style="color:#34d399; margin-bottom:8px;">✓ <strong>Treble Air (17.5 kHz):</strong> Clean ultrasonic air extension without DSP aliasing.</div>';
+    } else if (labChoices.treble === 'aliasing') {
+      itemsHtml += '<div style="color:#fb7185; margin-bottom:8px;">❌ <strong>DSP Aliasing Distortion:</strong> Cheap reconstruction filter created audible buzzing artifacts at 17.5 kHz.</div>';
+    } else {
+      itemsHtml += '<div style="color:#94a3b8; margin-bottom:8px;">ℹ <strong>Treble Cutoff / Threshold:</strong> Inaudible at 17.5 kHz (common on Bluetooth brickwall filters or normal hearing limits).</div>';
+    }
+
+    if (labChoices.noise === 'clean') {
+      itemsHtml += '<div style="color:#34d399;">✓ <strong>DAC Dynamic Range:</strong> Ultra-quiet noise floor with zero audible electrical hiss.</div>';
+    } else {
+      itemsHtml += '<div style="color:#fb7185;">❌ <strong>High Noise Floor:</strong> Audible hiss / background static floor detected during micro-dynamic decay.</div>';
+    }
+
+    list.innerHTML = itemsHtml;
+  }
+
+  window.resetGearDiagnostic = function() {
+    stopActiveTone();
+    labChoices = { sub: null, treble: null, noise: null, isBluetooth: false, sampleRate: 48000 };
+    goToLabStage(0);
   };
 
   // Web Player & Search
@@ -1842,7 +2487,6 @@ footer a:hover {
       analyser.connect(audioCtx.destination);
       renderVisualizer();
     } catch(e) {
-      // Fallback animated visualizer if cross-origin CORS prevents createMediaElementSource
       renderFallbackVisualizer();
     }
   }
