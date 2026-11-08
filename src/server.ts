@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import Fastify from 'fastify';
 import { loadConfig, type Config } from './config.js';
 import { homePage } from './home.js';
@@ -33,7 +35,7 @@ registerAddon('/f', createSourceProvider(config, 'instable'), manifests.instable
 
 function registerAddon(prefix: string, provider: QobuzProvider, manifest: { id: string; name: string; version: string }): void {
   const searchCache = new TtlCache<PublicTrack[]>(config.cacheTtlMs);
-  const route = (path: string): string => `${prefix}${path}` || '/';
+  const route = (pathStr: string): string => `${prefix}${pathStr}` || '/';
 
   app.get(route('/manifest.json'), async (_request, reply) => reply.header('Cache-Control', 'public, max-age=3600, s-maxage=86400').send({
     ...manifest, resources: ['search', 'stream'], allowDownloads: 0,
@@ -67,7 +69,7 @@ function registerAddon(prefix: string, provider: QobuzProvider, manifest: { id: 
     const quality = parseQuality(request.query.quality);
     const atmos = request.query.atmos ?? 'auto';
     const id = request.params.id;
-    if (!/^qobuz_[A-Za-z0-9_-]{10,120}$/.test(id)) throw notFound('track not found');
+    if (!/^qobuz_[A-Za-z0-9_-]{10,512}$/.test(id)) throw notFound('track not found');
     const upstreamId = upstreamIdFromPublicId(id, config.idSecret);
     if (!upstreamId) throw notFound('track not available');
     const stream = await provider.getStream(upstreamId, quality, atmos);
@@ -89,7 +91,8 @@ function parseQuality(value?: string): Quality {
   throw badRequest('quality must be LOSSLESS, HIGH, or LOW');
 }
 
-if (process.env.VERCEL !== '1') {
+const isDirectRun = process.argv[1] ? path.resolve(process.argv[1]) === fileURLToPath(import.meta.url) : false;
+if (process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'test' && isDirectRun) {
   app.listen({ host: config.host, port: config.port }).then(() => {
     app.log.info({ host: config.host, port: config.port, provider: config.provider }, 'BitChord addon listening');
   }).catch(error => { app.log.error(error); process.exit(1); });

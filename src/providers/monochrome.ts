@@ -14,9 +14,10 @@ export class MonochromeProvider implements QobuzProvider {
   }
 
   async getStream(trackId: string, _quality: Quality, _atmos: string): Promise<QobuzStream | null> {
-    if (!/^[A-Za-z0-9_-]+$/.test(trackId)) return null;
+    const cleanId = trackId.includes(':') ? trackId.slice(trackId.lastIndexOf(':') + 1) : trackId;
+    if (!/^[A-Za-z0-9_-]+$/.test(cleanId)) return null;
     return {
-      url: new URL(`/track/${encodeURIComponent(trackId)}`, this.baseUrl()).toString(),
+      url: new URL(`/track/${encodeURIComponent(cleanId)}`, this.baseUrl()).toString(),
       format: 'flac', quality: 'LOSSLESS', manifest: 'none', encrypted: false,
     };
   }
@@ -27,7 +28,8 @@ export class MonochromeProvider implements QobuzProvider {
     const url = new URL(path, this.baseUrl());
     for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
     let lastError: unknown;
-    for (let attempt = 0; attempt < 2; attempt += 1) {
+    const maxAttempts = Math.max(this.config.upstreamRetries ?? 1, 2);
+    for (let attempt = 0; attempt <= maxAttempts; attempt += 1) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), Math.max(this.config.requestTimeoutMs, 10000));
       try {
@@ -39,12 +41,18 @@ export class MonochromeProvider implements QobuzProvider {
       } catch (error) {
         lastError = error;
         if (error instanceof UpstreamError && error.status < 500) throw error;
-        if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 200));
+        if (attempt < maxAttempts) {
+          await delay(200 * (2 ** attempt) + Math.floor(Math.random() * 100));
+        }
       } finally { clearTimeout(timeout); }
     }
     if (lastError instanceof UpstreamError) throw lastError;
     throw new UpstreamError(502, 'Monochrome request failed');
   }
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function toTrack(raw: RecordValue): QobuzTrack | null {

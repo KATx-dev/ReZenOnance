@@ -15,7 +15,9 @@ export class InstableProvider implements QobuzProvider {
   }
 
   async getStream(trackId: string, quality: Quality, _atmos: string): Promise<QobuzStream | null> {
-    const body = await this.request(`/api/player/stream/${encodeURIComponent(trackId)}`, { quality: qualityId(quality) });
+    const cleanId = trackId.includes(':') ? trackId.slice(trackId.lastIndexOf(':') + 1) : trackId;
+    if (!/^[A-Za-z0-9_-]+$/.test(cleanId)) return null;
+    const body = await this.request(`/api/player/stream/${encodeURIComponent(cleanId)}`, { quality: qualityId(quality) });
     if (!isRecord(body) || typeof body.url !== 'string' || !/^https:\/\//i.test(body.url)) return null;
     return {
       url: body.url,
@@ -31,7 +33,7 @@ export class InstableProvider implements QobuzProvider {
     const url = new URL(path.replace(/^\/+/, ''), base.endsWith('/') ? base : `${base}/`);
     for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
     let lastError: unknown;
-    const maxAttempts = Math.max(this.config.upstreamRetries, 2);
+    const maxAttempts = Math.max(this.config.upstreamRetries ?? 1, 2);
     for (let attempt = 0; attempt <= maxAttempts; attempt += 1) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), Math.max(this.config.requestTimeoutMs, 15000));
@@ -56,12 +58,14 @@ export class InstableProvider implements QobuzProvider {
           throw new UpstreamError(502, 'Instable request failed');
         } else return body;
       } catch (error) {
+        lastError = error;
         if (error instanceof UpstreamError) {
           if (error.status !== 502 || attempt >= maxAttempts) throw error;
-          lastError = error;
-        } else lastError = error;
+        }
       } finally { clearTimeout(timeout); }
-      await delay(200 * 2 ** attempt);
+      if (attempt < maxAttempts) {
+        await delay(200 * (2 ** attempt) + Math.floor(Math.random() * 100));
+      }
     }
     throw lastError instanceof UpstreamError ? lastError : new UpstreamError(502, 'Instable request failed');
   }

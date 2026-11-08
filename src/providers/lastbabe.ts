@@ -16,7 +16,9 @@ export class LastBabeProvider implements QobuzProvider {
   }
 
   async getStream(trackId: string, quality: Quality, _atmos: string): Promise<QobuzStream | null> {
-    const body = await this.request(`/stream/${encodeURIComponent(trackId)}`, { quality });
+    const cleanId = trackId.includes(':') ? trackId.slice(trackId.lastIndexOf(':') + 1) : trackId;
+    if (!/^[A-Za-z0-9_-]+$/.test(cleanId)) return null;
+    const body = await this.request(`/stream/${encodeURIComponent(cleanId)}`, { quality });
     if (!isRecord(body) || typeof body.url !== 'string' || !/^https:\/\//i.test(body.url)) return null;
     return {
       url: body.url,
@@ -34,7 +36,8 @@ export class LastBabeProvider implements QobuzProvider {
     const url = new URL(path.replace(/^\/+/, ''), base.endsWith('/') ? base : `${base}/`);
     for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
     let lastError: unknown;
-    for (let attempt = 0; attempt <= this.config.upstreamRetries; attempt += 1) {
+    const maxAttempts = Math.max(this.config.upstreamRetries ?? 1, 2);
+    for (let attempt = 0; attempt <= maxAttempts; attempt += 1) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), this.config.requestTimeoutMs);
       try {
@@ -43,15 +46,18 @@ export class LastBabeProvider implements QobuzProvider {
         try { body = await response.json(); } catch { throw new UpstreamError(502, 'LastBabe returned invalid JSON'); }
         if (!response.ok) {
           const error = new UpstreamError(retryable(response.status) ? 502 : response.status === 404 ? 404 : 400, 'LastBabe backend request failed');
-          if (!retryable(response.status) || attempt >= this.config.upstreamRetries) throw error;
+          if (!retryable(response.status) || attempt >= maxAttempts) throw error;
           lastError = error;
         } else return body;
       } catch (error) {
+        lastError = error;
         if (error instanceof UpstreamError) {
-          if (error.status !== 502 || attempt >= this.config.upstreamRetries) throw error;
-        } else lastError = error;
+          if (error.status !== 502 || attempt >= maxAttempts) throw error;
+        }
       } finally { clearTimeout(timeout); }
-      await delay(200 * 2 ** attempt);
+      if (attempt < maxAttempts) {
+        await delay(200 * (2 ** attempt) + Math.floor(Math.random() * 100));
+      }
     }
     throw lastError instanceof UpstreamError ? lastError : new UpstreamError(502, 'LastBabe backend request failed');
   }

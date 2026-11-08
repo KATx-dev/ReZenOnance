@@ -16,7 +16,9 @@ export class QobuzDlProvider implements QobuzProvider {
   }
 
   async getStream(trackId: string, quality: Quality, _atmos: string): Promise<QobuzStream | null> {
-    const body = await this.request('/api/download-music', { track_id: trackId, quality: qualityId(quality) });
+    const cleanId = trackId.includes(':') ? trackId.slice(trackId.lastIndexOf(':') + 1) : trackId;
+    if (!/^[A-Za-z0-9_-]+$/.test(cleanId)) return null;
+    const body = await this.request('/api/download-music', { track_id: cleanId, quality: qualityId(quality) });
     const data = isRecord(body) && isRecord(body.data) ? body.data : undefined;
     const url = data && typeof data.url === 'string' ? data.url : undefined;
     if (!url || !/^https:\/\//i.test(url)) return null;
@@ -29,7 +31,8 @@ export class QobuzDlProvider implements QobuzProvider {
     const url = new URL(path, this.config.apiBaseUrl);
     for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
     let lastError: unknown;
-    for (let attempt = 0; attempt <= this.config.upstreamRetries; attempt += 1) {
+    const maxAttempts = Math.max(this.config.upstreamRetries ?? 1, 2);
+    for (let attempt = 0; attempt <= maxAttempts; attempt += 1) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), this.config.requestTimeoutMs);
       try {
@@ -38,20 +41,22 @@ export class QobuzDlProvider implements QobuzProvider {
         try { body = await response.json(); } catch { throw new UpstreamError(502, 'Qobuz-DL provider returned invalid JSON'); }
         if (!response.ok) {
           const error = new UpstreamError(retryableStatus(response.status) ? 502 : response.status === 404 ? 404 : 400, upstreamMessage(body));
-          if (!retryableStatus(response.status) || attempt >= this.config.upstreamRetries) throw error;
+          if (!retryableStatus(response.status) || attempt >= maxAttempts) throw error;
           lastError = error;
         } else if (isRecord(body) && body.success === false) {
           const error = new UpstreamError(502, upstreamMessage(body));
-          if (attempt >= this.config.upstreamRetries) throw error;
+          if (attempt >= maxAttempts) throw error;
           lastError = error;
         } else return body;
       } catch (error) {
-        if (error instanceof UpstreamError) {
-          if (error.status !== 502 || attempt >= this.config.upstreamRetries) throw error;
-        }
         lastError = error;
+        if (error instanceof UpstreamError) {
+          if (error.status !== 502 || attempt >= maxAttempts) throw error;
+        }
       } finally { clearTimeout(timeout); }
-      await delay(200 * 2 ** attempt);
+      if (attempt < maxAttempts) {
+        await delay(200 * (2 ** attempt) + Math.floor(Math.random() * 100));
+      }
     }
     throw lastError instanceof UpstreamError ? lastError : new UpstreamError(502, 'Qobuz-DL provider request failed');
   }

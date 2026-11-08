@@ -22,7 +22,8 @@ export class HttpQobuzProvider implements QobuzProvider {
   }
 
   async getStream(trackId: string, quality: Quality, atmos: string): Promise<QobuzStream | null> {
-    const path = this.config.streamPath!.replace('{id}', encodeURIComponent(trackId));
+    const cleanId = trackId.includes(':') ? trackId.slice(trackId.lastIndexOf(':') + 1) : trackId;
+    const path = this.config.streamPath!.replace('{id}', encodeURIComponent(cleanId));
     const body = await this.request(path, { quality, atmos });
     return isStream(body) ? body : null;
   }
@@ -32,19 +33,57 @@ export class HttpQobuzProvider implements QobuzProvider {
     for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
     const headers: Record<string, string> = { accept: 'application/json' };
     if (this.config.apiToken) headers.authorization = `Bearer ${this.config.apiToken}`;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.config.requestTimeoutMs);
-    try {
-      const response = await fetch(url, { headers, signal: controller.signal });
-      if (response.status === 404) throw new UpstreamError(404, 'provider track not found');
-      if (response.status === 429) throw new UpstreamError(503, 'provider rate limited');
-      if (!response.ok) throw new UpstreamError(502, `provider returned HTTP ${response.status}`);
-      try { return await response.json(); } catch { throw new UpstreamError(502, 'provider returned invalid JSON'); }
-    } catch (error) {
-      if (error instanceof UpstreamError) throw error;
-      throw new UpstreamError(502, 'provider request failed');
-    } finally { clearTimeout(timeout); }
+
+    let lastError: unknown;
+    const maxAttempts = Math.max(this.config.upstreamRetries ?? 1, 2);
+    for (let attempt = 0; attempt <= maxAttempts; attempt += 1) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), this.config.requestTimeoutMs);
+      try {
+        const response = await fetch(url, { headers, signal: controller.signal });
+        if (response.status === 404) throw new UpstreamError(404, 'provider track not found');
+        if (response.status === 429) {
+          const err = new UpstreamError(503, 'provider rate limited');
+          if (attempt >= maxAttempts) throw err;
+          lastError = err;
+          await delay(200 * (2 ** attempt) + Math.floor(Math.random() * 100));
+          continue;
+        }
+        if (!response.ok) {
+          const retryable = response.status >= 500 || response.status === 408;
+          const err = new UpstreamError(502, `provider returned HTTP ${response.status}`);
+          if (!retryable || attempt >= maxAttempts) throw err;
+          lastError = err;
+          await delay(200 * (2 ** attempt) + Math.floor(Math.random() * 100));
+          continue;
+        }
+        try {
+          return await response.json();
+        } catch {
+          const err = new UpstreamError(502, 'provider returned invalid JSON');
+          if (attempt >= maxAttempts) throw err;
+          lastError = err;
+          await delay(200 * (2 ** attempt) + Math.floor(Math.random() * 100));
+          continue;
+        }
+      } catch (error) {
+        lastError = error;
+        if (error instanceof UpstreamError) {
+          if (error.status !== 502 && error.status !== 503) throw error;
+        }
+      } finally {
+        clearTimeout(timeout);
+      }
+      if (attempt < maxAttempts) {
+        await delay(200 * (2 ** attempt) + Math.floor(Math.random() * 100));
+      }
+    }
+    throw lastError instanceof UpstreamError ? lastError : new UpstreamError(502, 'provider request failed');
   }
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null; }

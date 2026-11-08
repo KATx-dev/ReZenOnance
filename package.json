@@ -4,14 +4,18 @@
   "private": true,
   "description": "Playback-only BitChord addon with a replaceable authorized Qobuz provider.",
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "npm install --omit=dev --no-audit --no-fund && node dist/server.js",
     "dev": "tsx watch src/server.ts",
-    "test": "tsx --test test/**/*.test.ts"
+    "test": "node --import tsx test/runner.js"
   },
-  "dependencies": { "fastify": "^5.0.0" },
+  "dependencies": {
+    "fastify": "^5.0.0"
+  },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "tsx": "^4.19.0",
