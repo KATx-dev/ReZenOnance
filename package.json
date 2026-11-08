@@ -2,7 +2,8 @@
   "name": "rezenonance",
   "version": "1.0.0",
   "private": true,
-  "description": "Studio lossless BitChord music aggregator and gateway.",
+  "description": "Universal studio lossless music aggregator and addon gateway.",
+  "license": "GPL-3.0-or-later",
   "type": "module",
   "engines": {
     "node": ">=20"

@@ -147,4 +147,4 @@ Users can copy their private addon manifest URL or scan the dynamic QR code dire
 
 ## 📄 License
 
-MIT © [KATx-dev](https://github.com/KATx-dev)
+GPL-3.0 © [KATx-dev](https://github.com/KATx-dev)
