@@ -13,6 +13,7 @@ export interface UserAddonRecord {
   email: string;
   addon_slug: string;
   device_fingerprint: string | null;
+  hardware_fingerprint?: string | null;
   daily_limit: number;
   is_revoked: boolean;
   created_at: string;
@@ -95,10 +96,22 @@ export class AddonDatabase {
     return data[0] as UserAddonRecord;
   }
 
+  async getAddonByHardware(hardwareFingerprint: string): Promise<UserAddonRecord | null> {
+    if (!this.client || !hardwareFingerprint) return null;
+    const { data, error } = await this.client
+      .from('user_addons')
+      .select('*')
+      .eq('hardware_fingerprint', hardwareFingerprint)
+      .limit(1);
+    if (error || !data || data.length === 0) return null;
+    return data[0] as UserAddonRecord;
+  }
+
   async claimAddon(params: {
     userId?: string;
     email: string;
     deviceFingerprint: string;
+    hardwareFingerprint?: string;
     customSlug?: string;
   }): Promise<{ addon: UserAddonRecord; isNew: boolean }> {
     if (!this.client) throw new Error('Database is not initialized');
@@ -107,10 +120,17 @@ export class AddonDatabase {
     // 1. Check if user already has an addon assigned
     const existing = await this.getAddonByEmail(normalizedEmail);
     if (existing) {
+      if (params.hardwareFingerprint && !existing.hardware_fingerprint) {
+        await this.client
+          .from('user_addons')
+          .update({ hardware_fingerprint: params.hardwareFingerprint })
+          .eq('id', existing.id);
+        existing.hardware_fingerprint = params.hardwareFingerprint;
+      }
       return { addon: existing, isNew: false };
     }
 
-    // 2. Anti-Sybil Check: Check if this device fingerprint already minted an addon under a DIFFERENT email
+    // 2. Anti-Sybil Check 1: Cookie/Zombie tracker fingerprint check
     const deviceExisting = await this.getAddonByDevice(params.deviceFingerprint);
     if (deviceExisting && deviceExisting.email !== normalizedEmail) {
       throw new Error(
@@ -118,38 +138,47 @@ export class AddonDatabase {
       );
     }
 
-    // 3. Generate unique slug
+    // 3. Anti-Sybil Check 2: Hardware/GPU/Canvas fingerprint check (survives cookie deletion & incognito)
+    if (params.hardwareFingerprint) {
+      const hwExisting = await this.getAddonByHardware(params.hardwareFingerprint);
+      if (hwExisting && hwExisting.email !== normalizedEmail) {
+        throw new Error(
+          `Hardware signature already registered to another account (${hwExisting.email.replace(/(.{2})(.*)(@.*)/, '$1***$3')}). Only 1 personal addon link is permitted per device to prevent abuse.`
+        );
+      }
+    }
+
+    // 4. Generate unique slug
     let baseSlug = (params.customSlug || `rz-${randomBytes(4).toString('hex')}`)
       .toLowerCase()
       .replace(/[^a-z0-9_-]/g, '-');
     if (!baseSlug.startsWith('rz-')) baseSlug = `rz-${baseSlug}`;
 
+    const insertPayload: any = {
+      user_id: params.userId ?? null,
+      email: normalizedEmail,
+      addon_slug: baseSlug,
+      device_fingerprint: params.deviceFingerprint,
+      daily_limit: 300,
+      is_revoked: false,
+    };
+    if (params.hardwareFingerprint) {
+      insertPayload.hardware_fingerprint = params.hardwareFingerprint;
+    }
+
     const { data, error } = await this.client
       .from('user_addons')
-      .insert({
-        user_id: params.userId ?? null,
-        email: normalizedEmail,
-        addon_slug: baseSlug,
-        device_fingerprint: params.deviceFingerprint,
-        daily_limit: 300,
-        is_revoked: false,
-      })
+      .insert(insertPayload)
       .select()
       .single();
 
     if (error) {
       // If slug collision, retry with randomized suffix
       const fallbackSlug = `rz-${randomBytes(6).toString('hex')}`;
+      insertPayload.addon_slug = fallbackSlug;
       const { data: retryData, error: retryError } = await this.client
         .from('user_addons')
-        .insert({
-          user_id: params.userId ?? null,
-          email: normalizedEmail,
-          addon_slug: fallbackSlug,
-          device_fingerprint: params.deviceFingerprint,
-          daily_limit: 300,
-          is_revoked: false,
-        })
+        .insert(insertPayload)
         .select()
         .single();
       if (retryError) throw new Error(`Could not generate addon link: ${retryError.message}`);

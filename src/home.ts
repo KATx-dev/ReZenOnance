@@ -2416,6 +2416,175 @@ footer a:hover {
   var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0cXF2amNwc3lvbGZ2dWR0b252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjE1MjMsImV4cCI6MjA4ODUzNzUyM30.MHb8G9ESsEyifBGbQv4jH5mpOS5bkm3c6nkzvmXvk9s';
   var supabase = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
+  // --- Anti-Abuse: Zombie Vault (Self-Healing Storage across LocalStorage & IndexedDB) ---
+  var ZombieVault = {
+    KEY: '__rz_vault_token',
+    DB_NAME: 'rz_security_vault',
+    STORE_NAME: 'identity',
+
+    get: async function() {
+      try {
+        var ls = localStorage.getItem(this.KEY);
+        if (ls && /^[a-f0-9]{32,64}$/i.test(ls)) return ls;
+      } catch (e) {}
+      try {
+        var idb = await this.getIdb();
+        if (idb && /^[a-f0-9]{32,64}$/i.test(idb)) {
+          try { localStorage.setItem(this.KEY, idb); } catch (e) {}
+          return idb;
+        }
+      } catch (e) {}
+      return null;
+    },
+
+    set: async function(token) {
+      if (!token || !/^[a-f0-9]{32,64}$/i.test(token)) return;
+      try { localStorage.setItem(this.KEY, token); } catch (e) {}
+      try { await this.setIdb(token); } catch (e) {}
+    },
+
+    getIdb: function() {
+      var self = this;
+      return new Promise(function(resolve) {
+        try {
+          if (!window.indexedDB) return resolve(null);
+          var req = indexedDB.open(self.DB_NAME, 1);
+          req.onupgradeneeded = function(e) {
+            var db = e.target.result;
+            if (!db.objectStoreNames.contains(self.STORE_NAME)) {
+              db.createObjectStore(self.STORE_NAME);
+            }
+          };
+          req.onsuccess = function(e) {
+            try {
+              var db = e.target.result;
+              var tx = db.transaction(self.STORE_NAME, 'readonly');
+              var store = tx.objectStore(self.STORE_NAME);
+              var getReq = store.get('tracker');
+              getReq.onsuccess = function() { resolve(getReq.result || null); };
+              getReq.onerror = function() { resolve(null); };
+            } catch (err) { resolve(null); }
+          };
+          req.onerror = function() { resolve(null); };
+        } catch (err) { resolve(null); }
+      });
+    },
+
+    setIdb: function(token) {
+      var self = this;
+      return new Promise(function(resolve) {
+        try {
+          if (!window.indexedDB) return resolve();
+          var req = indexedDB.open(self.DB_NAME, 1);
+          req.onupgradeneeded = function(e) {
+            var db = e.target.result;
+            if (!db.objectStoreNames.contains(self.STORE_NAME)) {
+              db.createObjectStore(self.STORE_NAME);
+            }
+          };
+          req.onsuccess = function(e) {
+            try {
+              var db = e.target.result;
+              var tx = db.transaction(self.STORE_NAME, 'readwrite');
+              var store = tx.objectStore(self.STORE_NAME);
+              store.put(token, 'tracker');
+              tx.oncomplete = function() { resolve(); };
+              tx.onerror = function() { resolve(); };
+            } catch (err) { resolve(); }
+          };
+          req.onerror = function() { resolve(); };
+        } catch (err) { resolve(); }
+      });
+    }
+  };
+
+  // --- Anti-Abuse: Hardware & Canvas Device Fingerprint ---
+  var cachedHardwareFingerprint = null;
+  async function getHardwareFingerprint() {
+    if (cachedHardwareFingerprint) return cachedHardwareFingerprint;
+    try {
+      var parts = [];
+
+      // 1. Canvas 2D fingerprint (sub-pixel antialiasing & font engine)
+      try {
+        var cvs = document.createElement('canvas');
+        cvs.width = 240;
+        cvs.height = 60;
+        var c2d = cvs.getContext('2d');
+        if (c2d) {
+          c2d.textBaseline = 'top';
+          c2d.font = "14px 'Arial', sans-serif";
+          c2d.fillStyle = '#f60';
+          c2d.fillRect(125, 1, 62, 20);
+          c2d.fillStyle = '#069';
+          c2d.fillText('ReZenOnance <flac> 🎵 #@!', 2, 15);
+          c2d.fillStyle = 'rgba(102, 204, 0, 0.7)';
+          c2d.fillText('ReZenOnance <flac> 🎵 #@!', 4, 17);
+          parts.push(cvs.toDataURL());
+        }
+      } catch (e) { parts.push('no-canvas'); }
+
+      // 2. WebGL GPU renderer string
+      try {
+        var glCvs = document.createElement('canvas');
+        var gl = glCvs.getContext('webgl') || glCvs.getContext('experimental-webgl');
+        if (gl) {
+          var debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+          if (debugInfo) {
+            var vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || '';
+            var renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '';
+            parts.push(vendor + '~' + renderer);
+          } else {
+            parts.push(gl.getParameter(gl.RENDERER) || 'webgl-std');
+          }
+        }
+      } catch (e) { parts.push('no-webgl'); }
+
+      // 3. Hardware metrics & locale
+      parts.push((screen.width || 0) + 'x' + (screen.height || 0) + 'x' + (screen.colorDepth || 0));
+      parts.push(navigator.hardwareConcurrency || 0);
+      parts.push(navigator.deviceMemory || 0);
+      try { parts.push(Intl.DateTimeFormat().resolvedOptions().timeZone || ''); } catch (e) {}
+      parts.push(navigator.language || '');
+
+      var rawStr = parts.join('|||');
+
+      // 4. SHA-256 Digest
+      if (window.crypto && window.crypto.subtle) {
+        var encoder = new TextEncoder();
+        var data = encoder.encode(rawStr);
+        var hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+        var hashArray = Array.from(new Uint8Array(hashBuffer));
+        cachedHardwareFingerprint = hashArray.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+      } else {
+        var h = 0;
+        for (var i = 0; i < rawStr.length; i++) {
+          h = Math.imul(31, h) + rawStr.charCodeAt(i) | 0;
+        }
+        cachedHardwareFingerprint = Math.abs(h).toString(16).padStart(64, '0');
+      }
+      return cachedHardwareFingerprint;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  // Self-healing cookie check & initial sync
+  (async function initSecurityVault() {
+    try {
+      var zombie = await ZombieVault.get();
+      var headers = {};
+      if (zombie) headers['X-Zombie-Tracker'] = zombie;
+      var meRes = await fetch('/api/auth/me', { headers: headers });
+      if (meRes.ok) {
+        var meData = await meRes.json();
+        if (meData.tracker) {
+          await ZombieVault.set(meData.tracker);
+        }
+      }
+    } catch (e) {}
+  })();
+
   var currentUser = null;
   var currentSession = null;
   var currentSlug = localStorage.getItem('rezen_user_slug') || 'rz-' + Math.random().toString(36).substring(2, 8);
@@ -2638,16 +2807,30 @@ footer a:hover {
 
   async function claimUserAddon(user, token, customSlug) {
     try {
+      var zombieTracker = await ZombieVault.get();
+      var hwFingerprint = await getHardwareFingerprint();
+
       var headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = 'Bearer ' + token;
+      if (zombieTracker) headers['X-Zombie-Tracker'] = zombieTracker;
+
       var res = await fetch('/api/user/claim-addon', {
         method: 'POST',
         headers: headers,
-        body: JSON.stringify({ email: user.email, customSlug: customSlug })
+        body: JSON.stringify({
+          email: user.email,
+          customSlug: customSlug,
+          zombieTracker: zombieTracker,
+          hardwareFingerprint: hwFingerprint
+        })
       });
       var data = await res.json();
       var banner = document.getElementById('anti-abuse-banner');
       var textEl = document.getElementById('anti-abuse-text');
+
+      if (data.tracker) {
+        await ZombieVault.set(data.tracker);
+      }
 
       if (!res.ok) {
         if (data.code === 'SYBIL_DETECTED' || res.status === 403) {

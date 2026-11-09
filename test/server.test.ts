@@ -147,7 +147,52 @@ test('POST /api/user/claim-addon enforces anti-sybil and sets __rz_tracker cooki
   assert.equal(data3.code, 'SYBIL_DETECTED');
   assert.match(data3.error, /Device already registered to another account/);
 
-  // 4. Check quota endpoint
+  // 4. Zombie Tracker Resurrection: NO cookie sent, but zombieTracker provided -> resurrects cookie & blocks sybil
+  const rawTrackerToken = trackerMatch[1];
+  const resZombie = await app.inject({
+    method: 'POST',
+    url: '/api/user/claim-addon',
+    payload: { email: `user_${Date.now()}_3@example.com`, zombieTracker: rawTrackerToken },
+  });
+  assert.equal(resZombie.statusCode, 403);
+  const dataZombie = JSON.parse(resZombie.payload);
+  assert.equal(dataZombie.code, 'SYBIL_DETECTED');
+  assert.ok(resZombie.headers['set-cookie'], 'Must resurrect __rz_tracker cookie');
+
+  // 5. Hardware Fingerprint Anti-Sybil: Brand new cookie and no zombieTracker, but matching hardware signature
+  const testHwFingerprint = 'a'.repeat(64);
+  const hwEmail1 = `user_${Date.now()}_hw1@example.com`;
+  const hwEmail2 = `user_${Date.now()}_hw2@example.com`;
+
+  const resHw1 = await app.inject({
+    method: 'POST',
+    url: '/api/user/claim-addon',
+    payload: { email: hwEmail1, hardwareFingerprint: testHwFingerprint },
+  });
+  assert.equal(resHw1.statusCode, 200);
+
+  // Sybil with cleared cookies & fresh IP, but same hardware fingerprint
+  const resHw2 = await app.inject({
+    method: 'POST',
+    url: '/api/user/claim-addon',
+    payload: { email: hwEmail2, hardwareFingerprint: testHwFingerprint },
+  });
+  assert.equal(resHw2.statusCode, 403);
+  const dataHw2 = JSON.parse(resHw2.payload);
+  assert.equal(dataHw2.code, 'SYBIL_DETECTED');
+  assert.match(dataHw2.error, /Hardware signature already registered/);
+
+  // 6. Disposable Email Rejection
+  const resDisposable = await app.inject({
+    method: 'POST',
+    url: '/api/user/claim-addon',
+    payload: { email: 'baduser@tempmail.com' },
+  });
+  assert.equal(resDisposable.statusCode, 400);
+  const dataDisposable = JSON.parse(resDisposable.payload);
+  assert.match(dataDisposable.error, /Disposable or temporary email/);
+
+  // 7. Check quota endpoint
   const quotaRes = await app.inject({
     method: 'GET',
     url: `/api/user/quota/${data1.slug}`,

@@ -22,17 +22,22 @@ await app.register(fastifyCookie, {
 
 app.addHook('onRequest', async (request, reply) => {
   let tracker = request.cookies['__rz_tracker'];
-  if (!tracker || tracker.length < 16) {
-    tracker = randomBytes(24).toString('hex');
-    reply.setCookie('__rz_tracker', tracker, {
-      path: '/',
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 365 * 24 * 60 * 60, // 1 year
-    });
+  const zombieHeader = request.headers['x-zombie-tracker'] as string | undefined;
+  if (!tracker && zombieHeader && /^[a-f0-9]{32,64}$/i.test(zombieHeader)) {
+    tracker = zombieHeader;
     request.cookies['__rz_tracker'] = tracker;
   }
+  if (!tracker || tracker.length < 16) {
+    tracker = randomBytes(24).toString('hex');
+    request.cookies['__rz_tracker'] = tracker;
+  }
+  reply.setCookie('__rz_tracker', tracker, {
+    path: '/',
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 365 * 24 * 60 * 60, // 1 year
+  });
 });
 
 const manifests = {
@@ -62,80 +67,146 @@ app.get('/api/telemetry', async () => ({
   ],
 }));
 
+const DISPOSABLE_EMAIL_DOMAINS = new Set([
+  'mailinator.com', 'tempmail.com', '10minutemail.com', 'guerrillamail.com',
+  'trashmail.com', 'yopmail.com', 'sharklasers.com', 'dispostable.com',
+  'getairmail.com', 'throwawaymail.com', 'mohmal.com', 'generator.email',
+  'temp-mail.org', 'fakeinbox.com', 'burnermail.io', 'inboxkitten.com'
+]);
+
+function isDisposableEmail(email: string): boolean {
+  const domain = email.split('@')[1]?.toLowerCase().trim();
+  return domain ? DISPOSABLE_EMAIL_DOMAINS.has(domain) : false;
+}
+
+function resolveTracker(cookieValue?: string, zombieValue?: string, headerZombieValue?: string): string {
+  // Zombie storage token from client LocalStorage/IndexedDB takes precedence when resurrecting
+  if (zombieValue && /^[a-f0-9]{32,64}$/i.test(zombieValue)) {
+    return zombieValue;
+  }
+  if (headerZombieValue && /^[a-f0-9]{32,64}$/i.test(headerZombieValue)) {
+    return headerZombieValue;
+  }
+  if (cookieValue && /^[a-f0-9]{32,64}$/i.test(cookieValue)) {
+    return cookieValue;
+  }
+  return randomBytes(24).toString('hex');
+}
+
 app.get('/api/auth/config', async () => ({
   supabaseUrl: config.supabaseUrl,
   supabaseKey: config.supabaseKey,
 }));
 
 app.get('/api/auth/me', async (request, reply) => {
+  const zombieHeader = request.headers['x-zombie-tracker'] as string | undefined;
+  const tracker = resolveTracker(request.cookies['__rz_tracker'], undefined, zombieHeader);
+  reply.setCookie('__rz_tracker', tracker, {
+    path: '/',
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 60 * 60 * 24 * 365,
+  });
+
   const authHeader = request.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return reply.send({ authenticated: false, user: null });
+    return reply.send({ authenticated: false, user: null, tracker });
   }
   const token = authHeader.substring(7).trim();
   const verified = await db.verifyUser(token);
   if (!verified) {
-    return reply.send({ authenticated: false, user: null });
+    return reply.send({ authenticated: false, user: null, tracker });
   }
   const addon = await db.getAddonByEmail(verified.email);
   return reply.send({
     authenticated: true,
     user: verified,
     addon: addon ? { slug: addon.addon_slug, dailyLimit: addon.daily_limit, isRevoked: addon.is_revoked } : null,
+    tracker,
   });
 });
 
-app.post<{ Body?: { email?: string; customSlug?: string } }>('/api/user/claim-addon', async (request, reply) => {
-  const tracker = request.cookies['__rz_tracker'] || randomBytes(24).toString('hex');
-  const fingerprint = db.hashDeviceFingerprint(tracker, config.idSecret);
+app.post<{ Body?: { email?: string; customSlug?: string; zombieTracker?: string; hardwareFingerprint?: string } }>(
+  '/api/user/claim-addon',
+  async (request, reply) => {
+    const zombieHeader = request.headers['x-zombie-tracker'] as string | undefined;
+    const tracker = resolveTracker(request.cookies['__rz_tracker'], request.body?.zombieTracker, zombieHeader);
 
-  const authHeader = request.headers.authorization;
-  let userId: string | undefined;
-  let userEmail: string | undefined;
-
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7).trim();
-    const verified = await db.verifyUser(token);
-    if (verified) {
-      userId = verified.id;
-      userEmail = verified.email;
-    }
-  }
-
-  if (!userEmail && request.body?.email) {
-    const candidate = request.body.email.trim().toLowerCase();
-    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(candidate)) {
-      userEmail = candidate;
-    }
-  }
-
-  if (!userEmail) {
-    return reply.code(401).send({ error: 'Authentication required. Please sign in with Google or Email.' });
-  }
-
-  try {
-    const { addon, isNew } = await db.claimAddon({
-      userId,
-      email: userEmail,
-      deviceFingerprint: fingerprint,
-      customSlug: request.body?.customSlug,
+    reply.setCookie('__rz_tracker', tracker, {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 365,
     });
-    const quota = await db.getQuotaStatus(addon.addon_slug);
-    return reply.send({
-      ok: true,
-      isNew,
-      slug: addon.addon_slug,
-      email: addon.email,
-      quota,
-    });
-  } catch (err: any) {
-    const message = err?.message || 'Could not claim addon';
-    if (message.includes('Device already registered to another account')) {
-      return reply.code(403).send({ ok: false, error: message, code: 'SYBIL_DETECTED' });
+
+    const fingerprint = db.hashDeviceFingerprint(tracker, config.idSecret);
+
+    const authHeader = request.headers.authorization;
+    let userId: string | undefined;
+    let userEmail: string | undefined;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7).trim();
+      const verified = await db.verifyUser(token);
+      if (verified) {
+        userId = verified.id;
+        userEmail = verified.email;
+      }
     }
-    return reply.code(400).send({ ok: false, error: message });
+
+    if (!userEmail && request.body?.email) {
+      const candidate = request.body.email.trim().toLowerCase();
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(candidate)) {
+        userEmail = candidate;
+      }
+    }
+
+    if (!userEmail) {
+      return reply.code(401).send({ error: 'Authentication required. Please sign in with Google or Email.' });
+    }
+
+    if (isDisposableEmail(userEmail)) {
+      return reply.code(400).send({
+        ok: false,
+        error: 'Disposable or temporary email addresses are not permitted. Please sign in with Google or use a permanent email address.',
+      });
+    }
+
+    const hardwareFingerprint = request.body?.hardwareFingerprint && /^[a-f0-9]{64}$/i.test(request.body.hardwareFingerprint)
+      ? request.body.hardwareFingerprint.toLowerCase()
+      : undefined;
+
+    try {
+      const { addon, isNew } = await db.claimAddon({
+        userId,
+        email: userEmail,
+        deviceFingerprint: fingerprint,
+        hardwareFingerprint,
+        customSlug: request.body?.customSlug,
+      });
+      const quota = await db.getQuotaStatus(addon.addon_slug);
+      return reply.send({
+        ok: true,
+        isNew,
+        slug: addon.addon_slug,
+        email: addon.email,
+        tracker,
+        quota,
+      });
+    } catch (err: any) {
+      const message = err?.message || 'Could not claim addon';
+      if (
+        message.includes('Device already registered to another account') ||
+        message.includes('Hardware signature already registered to another account')
+      ) {
+        return reply.code(403).send({ ok: false, error: message, code: 'SYBIL_DETECTED' });
+      }
+      return reply.code(400).send({ ok: false, error: message });
+    }
   }
-});
+);
 
 app.get<{ Params: { slug: string } }>('/api/user/quota/:slug', async (request, reply) => {
   const slug = request.params.slug;
