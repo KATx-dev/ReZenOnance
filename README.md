@@ -14,10 +14,13 @@
 - **Genuine 24-Bit / 192 kHz FLAC**: Direct edge delivery via Akamai CDN and lossless core APIs with zero transcoding loss.
 - **Sub-Second Provider Racing**: The multi-source racing engine queries verified operational backends concurrently and resolves the fastest usable result.
 - **Personal Gateway Endpoints**: Users generate isolated addon URLs (`/u/:userSlug/manifest.json`) with customizable aliases and instant QR code generation for Android TV and mobile scanning.
-- **Abuse & Upstream Guard**:
+- **Enterprise Anti-Abuse & Hardware Guard**:
+  - **Self-Healing Zombie Vault**: Triple-storage identity synchronization across Cookies, `localStorage`, and `IndexedDB` that auto-resurrects cleared cookies.
+  - **Hardware & Canvas Fingerprinting**: WebGL GPU signature and 2D canvas sub-pixel rasterization hash that enforces a 1-addon policy even in Incognito mode.
+  - **Disposable Email Blacklist**: Rejects burner email domains to enforce authentic accounts.
   - **300 Tracks / Day**: Rolling daily stream allocation resetting at `00:00 UTC`.
-  - **Max 2 Concurrent Devices**: Sliding window session leases prevent credential sharing while keeping desktop and mobile synced.
-  - **Max 15 Unique IPs / Day**: Anti-sybil protection that easily accommodates cellular/Wi-Fi transitions.
+  - **Max 2 Concurrent Devices**: Sliding 10-minute window leases prevent credential sharing while keeping desktop and mobile in sync.
+  - **Max 15 Unique IPs / Day**: Anti-sybil ceiling accommodating cellular/Wi-Fi transitions.
 - **Lossless Audio & Gear Diagnostic Lab**: Browser-based Web Audio API suite that audits your DAC clock, detects lossy Bluetooth compression bottlenecks (SBC/AAC @ 256kbps), and conducts 32 Hz sub-bass, 17.5 kHz treble air, and -45 dBFS noise floor acoustic tests.
 - **Legacy TV Support**: Preserved lightweight, CSS3-minimal interface at `/tv` specifically optimized for older Sony Bravia / Vewd TV browsers.
 
@@ -137,10 +140,40 @@ Users can copy their private addon manifest URL or scan the dynamic QR code dire
 
 ---
 
-## 🔒 Security & Privacy
+## 🔒 Security & Anti-Abuse Architecture
 
-- **Opaque Signed IDs**: Track identifiers are cryptographically signed with HMAC to prevent tampering, injection, and unauthorized parameter manipulation.
-- **Stateless Privacy**: Upstream authorization tokens, private backend URLs, and cookies are never leaked to the client or logged in plain text.
+ReZenOnance implements an enterprise-grade, multi-layered anti-abuse and security architecture to protect upstream lossless providers, ensure fair distribution, and stop sybil endpoint minting:
+
+### 1. 🧟 Self-Healing Zombie Vault (Multi-Storage Cross-Sync)
+Traditional cookies can be wiped with a single click. ReZenOnance uses a self-healing client vault that mirrors tracking tokens across three independent browser storage engines:
+- **`HttpOnly` Cookie** (`__rz_tracker`, 1-year expiration, `SameSite=Lax`, `Secure`)
+- **`localStorage`** (`__rz_vault_token`)
+- **`IndexedDB`** (`rz_security_vault` / `identity` store)
+
+**Resurrection Flow**: If a visitor clears their cookies or uses a privacy extension, the client immediately detects the missing cookie on page load, retrieves the persistent vault token from `IndexedDB` or `localStorage`, and delivers an `X-Zombie-Tracker` header. The server verifies the token and **automatically resurrects the `__rz_tracker` cookie**.
+
+### 2. 🖥️ Hardware, WebGL & Canvas Fingerprinting *(Incognito Defense)*
+To block users who bypass storage entirely via Incognito mode or multi-profile browsers, ReZenOnance extracts a client-side SHA-256 hardware signature without relying on persistent storage:
+- **Canvas 2D Engine**: Evaluates GPU sub-pixel antialiasing and emoji font engine rasterization quirks.
+- **WebGL GPU Signature**: Unmasked GPU vendor and driver renderer strings via `WEBGL_debug_renderer_info`.
+- **System Metrics**: CPU hardware concurrency (`navigator.hardwareConcurrency`), screen dimensions, color depth, and system timezone.
+
+The computed 64-character hex signature is verified in Supabase upon addon claim. If the physical machine already minted an addon under another email, the server immediately triggers an HTTP 403 `SYBIL_DETECTED` wall.
+
+### 3. 🛡️ Authenticated Account Binding & Disposable Email Filter
+- **Supabase Auth**: Users authenticate via Google OAuth or 6-digit email OTP.
+- **Burner Email Shield**: Blocks disposable email providers (`tempmail`, `10minutemail`, `mailinator`, `guerrillamail`, `yopmail`, `throwawaymail`, etc.) to prevent automated burner account generation.
+- **Single-Addon Account Association**: Each verified email or Google account is bound to a single addon endpoint in Postgres.
+
+### 4. ⏱️ Upstream Rate Limiting & Sliding Device Leases
+Personal endpoints enforce strict quotas on stream resolution:
+- **300 Tracks / Day**: Rolling daily limit resetting at `00:00 UTC`.
+- **Max 2 Concurrent Devices**: Enforced via sliding 10-minute device leases (`addon_device_leases`) keyed to IP and User-Agent hashes.
+- **Max 15 Unique IPs / Day**: Anti-credential sharing protection that accommodates cellular and Wi-Fi handoffs without false positives.
+
+### 5. 🔐 Cryptographic Privacy & ID Signing
+- **Opaque Signed IDs**: Track identifiers are cryptographically signed with HMAC-SHA256 (`qobuz_...`) to prevent parameter tampering and brute-force ID guessing.
+- **Stateless Privacy**: Upstream authorization tokens, private backend URLs, and cookies are never leaked to public manifests or client logs.
 - **Strict Media Validation**: Only valid HTTPS streaming renditions with verified FLAC/DASH containers are returned; unencrypted or malformed URLs are rejected.
 
 ---
