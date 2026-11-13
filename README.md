@@ -32,10 +32,10 @@ ReZenOnance focuses on verified, high-throughput lossless backends:
 
 | Provider | Route | Delivery Protocol | Audio Fidelity | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **Studio Lossless Source** (Heisenberg) | `/g` | Direct Akamai CDN | **24-bit / 192 kHz FLAC** | `Operational` |
+| **Monochrome Lossless Core** | `/c` | Direct FLAC Stream API | **24-bit / 192 kHz FLAC** | `Operational` |
 | **Lossless Core Source** (Arcod) | `/f` | Direct Stream API | **FLAC Lossless** | `Operational` |
 | **Lossless Alternate** | `/e` | Remote Addon Proxy | DASH / FLAC | `Standby` |
-| **Monochrome Core** | `/c` | Direct FLAC | FLAC | `Offline (Monitored)` |
+| **Legacy Source** | `/a` | Remote Addon Proxy | FLAC / MP3 | `Standby` |
 
 *Inactive/dead legacy upstreams are excluded from the default racing loop to guarantee sub-500ms search latency.*
 
@@ -53,6 +53,8 @@ All manifests strictly declare `"allowDownloads": 0` for direct streaming compat
 | `/u/:userSlug/manifest.json` | `GET` | Isolated personal gateway manifest with rate-limiting context |
 | `/search?q=...&quality=LOSSLESS` | `GET` | Races active lossless backends; returns normalized tracks with signed IDs |
 | `/stream/:id?quality=LOSSLESS` | `GET` | Resolves signed opaque track ID to direct playable HTTPS stream URL |
+| `/admin` | `GET` | Master Admin Console (user endpoint revocation & provider management) |
+| `/api/admin/*` | `POST/GET` | Administrative management APIs (protected by master key) |
 | `/api/telemetry` | `GET` | Real-time upstream health status, latencies, and route availability |
 | `/health` | `GET` | Health check endpoint returning `{ ok: true }` |
 
@@ -110,12 +112,15 @@ Configure via `.env` or your hosting provider dashboard:
 PORT=3000
 HOST=0.0.0.0
 
-# Provider Strategy: multi (races Heisenberg & Arcod), qobuzdl, or stub
+# Provider Strategy: multi (races Monochrome & Arcod), qobuzdl, or stub
 QOBUZ_PROVIDER=multi
 
 # Upstream Endpoints
-HEISENBERG_BASE_URL=https://heisenbergbackaaahh.de.deplexo.com/a
 INSTABLE_BASE_URL=https://arcod.xyz
+MONOCHROME_BASE_URL=https://tracks.monochrome.st
+
+# Master Admin Key
+ADMIN_PASSWORD=ReZen#QuantumFLAC-2026!Vault
 
 # Security & ID Signing Secret
 QOBUZ_ID_SECRET=change-me-in-production-to-a-secure-random-string

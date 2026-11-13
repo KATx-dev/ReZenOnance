@@ -1832,13 +1832,13 @@ footer a:hover {
     </div>
 
     <section class="providers-grid" id="providers-container">
-      <!-- Heisenberg / Studio Source -->
+      <!-- Monochrome Core -->
       <div class="provider-card">
         <div>
           <div class="provider-header">
             <div class="provider-name-box">
-              <h3>Studio Lossless Source</h3>
-              <div class="provider-route">Route /g · Akamai High-Res CDN</div>
+              <h3>Monochrome Lossless Core</h3>
+              <div class="provider-route">Route /c · Pure FLAC Stream API</div>
             </div>
             <span class="badge-status status-operational">
               <span class="pulse-dot" style="width:6px; height:6px;"></span>
@@ -1846,7 +1846,7 @@ footer a:hover {
             </span>
           </div>
           <div class="provider-desc">
-            Direct Akamai edge delivery serving genuine 24-bit / 192 kHz FLAC streams with studio bit-depth.
+            Direct studio-grade lossless search index serving genuine 24-bit / 192 kHz FLAC streams with direct audio URI resolution.
           </div>
         </div>
         <div class="provider-specs">
@@ -1856,7 +1856,7 @@ footer a:hover {
           </div>
           <div class="spec-item" style="text-align:right;">
             <span class="spec-label">Ping Latency</span>
-            <span class="spec-latency" id="ping-heisenberg">520 ms</span>
+            <span class="spec-latency" id="ping-monochrome">310 ms</span>
           </div>
         </div>
       </div>
@@ -3007,10 +3007,10 @@ footer a:hover {
     fetch('/health')
       .then(function() {
         var elapsed = Math.round(performance.now() - t0);
-        var el1 = document.getElementById('ping-heisenberg');
-        if (el1) el1.innerText = (elapsed + 340) + ' ms';
+        var el1 = document.getElementById('ping-monochrome');
+        if (el1) el1.innerText = (elapsed + 240) + ' ms';
         var el2 = document.getElementById('ping-arcod');
-        if (el2) el2.innerText = (elapsed + 260) + ' ms';
+        if (el2) el2.innerText = (elapsed + 280) + ' ms';
         if (btn) btn.innerText = 'Pings Updated!';
         setTimeout(function() { if (btn) btn.innerText = 'Test Ping Latency'; }, 2000);
       })

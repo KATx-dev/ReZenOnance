@@ -15,7 +15,7 @@ export interface Config {
   deezerBaseUrl?: string;
   eljohnzcBaseUrl?: string;
   instableBaseUrl?: string;
-  heisenbergBaseUrl?: string;
+  adminPassword: string;
   supabaseUrl: string;
   supabaseKey: string;
 }
@@ -50,7 +50,7 @@ export function loadConfig(): Config {
     deezerBaseUrl: process.env.DEEZER_BASE_URL ?? 'https://dzr.tabs-vs-spaces.wtf',
     eljohnzcBaseUrl: process.env.ELJOHNZC_BASE_URL ?? 'https://eljohnzc-addon.de.deplexo.com/59efe06a96',
     instableBaseUrl: process.env.INSTABLE_BASE_URL ?? 'https://arcod.xyz',
-    heisenbergBaseUrl: process.env.HEISENBERG_BASE_URL ?? 'https://heisenbergbackaaahh.de.deplexo.com/a',
+    adminPassword: process.env.ADMIN_PASSWORD ?? 'ReZen#QuantumFLAC-2026!Vault',
     supabaseUrl: process.env.SUPABASE_URL ?? 'https://dtqqvjcpsyolfvudtonv.supabase.co',
     supabaseKey: process.env.SUPABASE_KEY ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0cXF2amNwc3lvbGZ2dWR0b252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjE1MjMsImV4cCI6MjA4ODUzNzUyM30.MHb8G9ESsEyifBGbQv4jH5mpOS5bkm3c6nkzvmXvk9s',
   };

@@ -9,12 +9,44 @@ import { TtlCache } from './cache.js';
 import { AppError, badRequest, notFound } from './errors.js';
 import { normalizeTrack, streamResponse, upstreamIdFromPublicId } from './normalize.js';
 import { createProvider, createSourceProvider, type IsolatedSource } from './providers/index.js';
+import { RacingProvider } from './providers/racing.js';
+import { RemoteAddonProvider } from './providers/remote-addon.js';
+import {
+  generateAdminToken,
+  verifyAdminToken,
+  verifyAdminPassword,
+  benchmarkAndVerifyAddon,
+  renderAdminHtml,
+} from './admin.js';
 import { AddonDatabase } from './db.js';
 import type { QobuzProvider, Quality, PublicTrack } from './types.js';
 
 const config = loadConfig();
 const app = Fastify({ logger: { redact: ['req.headers.authorization', 'req.headers.cookie', '*.url'] } });
 const db = new AddonDatabase(config);
+const racingEngine = createProvider(config);
+
+// Hydrate dynamic provider settings from Supabase if configured
+if (db.isConfigured && 'getSources' in (racingEngine as any)) {
+  const dynamicEngine = racingEngine as RacingProvider;
+  db.getProviderSettings().then(settings => {
+    for (const s of settings) {
+      if (s.type === 'remote-addon') {
+        dynamicEngine.addSource({
+          id: s.id,
+          name: s.name,
+          type: 'remote-addon',
+          baseUrl: s.base_url,
+          enabled: s.is_enabled !== false,
+          provider: new RemoteAddonProvider(config, s.base_url),
+          healthStatus: s.health_status ?? 'operational',
+        });
+      } else {
+        dynamicEngine.setSourceEnabled(s.id, s.is_enabled !== false);
+      }
+    }
+  }).catch(() => {});
+}
 
 await app.register(fastifyCookie, {
   secret: config.idSecret,
@@ -48,24 +80,30 @@ const manifests = {
   deezer: { id: 'com.bitchord.qobuz.deezer', name: 'Deezer Fallback', version: '1.0.0' },
   eljohnzc: { id: 'com.bitchord.qobuz.eljohnzc', name: 'Lossless Alternate', version: '1.0.0' },
   instable: { id: 'com.bitchord.qobuz.instable', name: 'Arcod Lossless', version: '1.0.0' },
-  heisenberg: { id: 'com.bitchord.qobuz.heisenberg', name: 'Studio Lossless Source', version: '1.0.0' },
 } as const;
 
 app.get('/', async (_request, reply) => reply.type('text/html; charset=utf-8').send(homePage));
 app.get('/tv', async (_request, reply) => reply.type('text/html; charset=utf-8').send(legacyTvPage));
 app.get('/health', async () => ({ ok: true }));
 
-app.get('/api/telemetry', async () => ({
-  status: 'operational',
-  timestamp: Date.now(),
-  sources: [
-    { name: 'Studio Lossless Source', route: '/g', status: 'operational', quality: '24-bit / 192 kHz', latency: 520 },
-    { name: 'Arcod Lossless Core', route: '/f', status: 'operational', quality: 'FLAC Lossless', latency: 380 },
-    { name: 'Lossless Source Alternate', route: '/e', status: 'standby', quality: 'DASH / FLAC', latency: null },
-    { name: 'Monochrome Core', route: '/c', status: 'offline', quality: 'FLAC', latency: null },
-    { name: 'Legacy Qobuz-DL', route: '/a', status: 'unauthorized', quality: 'MP3', latency: null },
-  ],
-}));
+app.get('/api/telemetry', async () => {
+  const sources = ('getSources' in (racingEngine as any) ? (racingEngine as RacingProvider).getSources() : []).map(s => ({
+    name: s.name,
+    route: s.id === 'monochrome' ? '/c' : s.id === 'instable' ? '/f' : `/ext/${s.id}`,
+    status: s.enabled !== false ? 'operational' : 'disabled',
+    quality: s.id === 'monochrome' ? '24-bit / 192 kHz FLAC' : 'FLAC Lossless',
+    latency: s.lastLatencyMs ?? (s.id === 'monochrome' ? 310 : 380),
+  }));
+
+  return {
+    status: 'operational',
+    timestamp: Date.now(),
+    sources: sources.length > 0 ? sources : [
+      { name: 'Monochrome Lossless Core', route: '/c', status: 'operational', quality: '24-bit / 192 kHz FLAC', latency: 310 },
+      { name: 'Arcod Lossless Core', route: '/f', status: 'operational', quality: 'FLAC Lossless', latency: 380 },
+    ],
+  };
+});
 
 const DISPOSABLE_EMAIL_DOMAINS = new Set([
   'mailinator.com', 'tempmail.com', '10minutemail.com', 'guerrillamail.com',
@@ -215,15 +253,181 @@ app.get<{ Params: { slug: string } }>('/api/user/quota/:slug', async (request, r
   return reply.send({ ok: true, quota });
 });
 
-registerAddon('', createProvider(config), manifests.root);
-registerAddon('/u/:userSlug', createProvider(config), manifests.root);
+// --- Master Admin Console Routes ---
+
+app.get('/admin', async (_request, reply) => reply.type('text/html; charset=utf-8').send(renderAdminHtml()));
+
+app.post<{ Body?: { password?: string } }>('/api/admin/login', async (request, reply) => {
+  const password = request.body?.password;
+  if (!verifyAdminPassword(password, config)) {
+    return reply.code(401).send({ ok: false, error: 'Invalid master administrative key' });
+  }
+  const token = generateAdminToken(config);
+  reply.setCookie('__rz_admin_session', token, {
+    path: '/',
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 7 * 24 * 60 * 60, // 7 days
+  });
+  return reply.send({ ok: true, token });
+});
+
+app.post('/api/admin/logout', async (_request, reply) => {
+  reply.clearCookie('__rz_admin_session', { path: '/' });
+  return reply.send({ ok: true });
+});
+
+function requireAdminAuth(request: any, reply: any): boolean {
+  const token = request.cookies['__rz_admin_session'] || (request.headers.authorization?.startsWith('Bearer ') ? request.headers.authorization.slice(7).trim() : undefined);
+  if (!verifyAdminToken(token, config)) {
+    reply.code(401).send({ ok: false, error: 'Unauthorized: Admin authentication required' });
+    return false;
+  }
+  return true;
+}
+
+app.get('/api/admin/overview', async (request, reply) => {
+  if (!requireAdminAuth(request, reply)) return;
+  const { total } = await db.getAllUserAddons({ limit: 1 });
+  const sources = 'getSources' in (racingEngine as any) ? (racingEngine as RacingProvider).getSources() : [];
+  const activeProviders = sources.filter(s => s.enabled !== false).length;
+  return reply.send({ ok: true, totalAddons: total, activeProviders, providersCount: sources.length });
+});
+
+app.get<{ Querystring: { search?: string; filter?: 'all' | 'active' | 'revoked'; limit?: string; offset?: string } }>(
+  '/api/admin/addons',
+  async (request, reply) => {
+    if (!requireAdminAuth(request, reply)) return;
+    const search = request.query.search;
+    const filter = request.query.filter;
+    const limit = request.query.limit ? parseInt(request.query.limit, 10) : 50;
+    const offset = request.query.offset ? parseInt(request.query.offset, 10) : 0;
+    const result = await db.getAllUserAddons({ search, filter, limit, offset });
+    return reply.send({ ok: true, ...result });
+  }
+);
+
+app.post<{ Body?: { slug?: string; isRevoked?: boolean } }>(
+  '/api/admin/addon/revoke',
+  async (request, reply) => {
+    if (!requireAdminAuth(request, reply)) return;
+    const slug = request.body?.slug;
+    const isRevoked = request.body?.isRevoked === true;
+    if (!slug) throw badRequest('slug is required');
+    const success = await db.setAddonRevocation(slug, isRevoked);
+    return reply.send({ ok: success });
+  }
+);
+
+app.get('/api/admin/providers', async (request, reply) => {
+  if (!requireAdminAuth(request, reply)) return;
+  const sources = 'getSources' in (racingEngine as any) ? (racingEngine as RacingProvider).getSources() : [];
+  return reply.send({
+    ok: true,
+    providers: sources.map(s => ({
+      id: s.id,
+      name: s.name,
+      type: s.type ?? 'built-in',
+      baseUrl: s.baseUrl,
+      enabled: s.enabled !== false,
+      healthStatus: s.healthStatus ?? 'operational',
+      latency: s.lastLatencyMs,
+    })),
+  });
+});
+
+app.post<{ Body?: { id?: string; enabled?: boolean } }>(
+  '/api/admin/providers/toggle',
+  async (request, reply) => {
+    if (!requireAdminAuth(request, reply)) return;
+    const id = request.body?.id;
+    const enabled = request.body?.enabled !== false;
+    if (!id) throw badRequest('id is required');
+    if ('setSourceEnabled' in (racingEngine as any)) {
+      (racingEngine as RacingProvider).setSourceEnabled(id, enabled);
+    }
+    await db.setProviderEnabled(id, enabled);
+    return reply.send({ ok: true, id, enabled });
+  }
+);
+
+app.post<{ Body?: { manifestUrl?: string } }>(
+  '/api/admin/providers/test-import',
+  async (request, reply) => {
+    if (!requireAdminAuth(request, reply)) return;
+    const manifestUrl = request.body?.manifestUrl?.trim();
+    if (!manifestUrl) throw badRequest('manifestUrl is required');
+
+    const result = await benchmarkAndVerifyAddon(manifestUrl, config);
+    if (!result.ok) {
+      return reply.code(400).send({ ok: false, error: result.error });
+    }
+
+    const dynamicSource = {
+      id: result.id!,
+      name: result.name!,
+      type: 'remote-addon' as const,
+      baseUrl: result.baseUrl!,
+      enabled: true,
+      provider: new RemoteAddonProvider(config, result.baseUrl!),
+      healthStatus: 'operational',
+      lastLatencyMs: result.latencyMs,
+    };
+
+    if ('addSource' in (racingEngine as any)) {
+      (racingEngine as RacingProvider).addSource(dynamicSource);
+    }
+
+    await db.saveProviderSetting({
+      id: result.id!,
+      name: result.name!,
+      type: 'remote-addon',
+      base_url: result.baseUrl!,
+      is_enabled: true,
+      health_status: 'operational',
+      last_tested_at: new Date().toISOString(),
+    });
+
+    return reply.send({
+      ok: true,
+      provider: {
+        id: result.id,
+        name: result.name,
+        baseUrl: result.baseUrl,
+        enabled: true,
+      },
+      details: {
+        latencyMs: result.latencyMs,
+        trackCount: result.trackCount,
+        sampleTitle: result.sampleTitle,
+      },
+    });
+  }
+);
+
+app.delete<{ Params: { id: string } }>(
+  '/api/admin/providers/:id',
+  async (request, reply) => {
+    if (!requireAdminAuth(request, reply)) return;
+    const id = request.params.id;
+    if (!id) throw badRequest('id is required');
+    if ('removeSource' in (racingEngine as any)) {
+      (racingEngine as RacingProvider).removeSource(id);
+    }
+    await db.deleteProviderSetting(id);
+    return reply.send({ ok: true, id });
+  }
+);
+
+registerAddon('', racingEngine, manifests.root);
+registerAddon('/u/:userSlug', racingEngine, manifests.root);
 registerAddon('/a', createSourceProvider(config, 'qobuzdl'), manifests.qobuzdl);
 registerAddon('/b', createSourceProvider(config, 'lastbabe'), manifests.lastbabe);
 registerAddon('/c', createSourceProvider(config, 'monochrome'), manifests.monochrome);
 registerAddon('/d', createSourceProvider(config, 'deezer'), manifests.deezer);
 registerAddon('/e', createSourceProvider(config, 'eljohnzc'), manifests.eljohnzc);
 registerAddon('/f', createSourceProvider(config, 'instable'), manifests.instable);
-registerAddon('/g', createSourceProvider(config, 'heisenberg'), manifests.heisenberg);
 
 function registerAddon(prefix: string, provider: QobuzProvider, manifest: { id: string; name: string; version: string }): void {
   const searchCache = new TtlCache<PublicTrack[]>(config.cacheTtlMs);

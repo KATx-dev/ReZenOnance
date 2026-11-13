@@ -9,14 +9,14 @@ import { MonochromeProvider } from './monochrome.js';
 import { RemoteAddonProvider } from './remote-addon.js';
 import { InstableProvider } from './instable.js';
 
-export type IsolatedSource = 'qobuzdl' | 'lastbabe' | 'monochrome' | 'deezer' | 'eljohnzc' | 'instable' | 'heisenberg';
+export type IsolatedSource = 'qobuzdl' | 'lastbabe' | 'monochrome' | 'deezer' | 'eljohnzc' | 'instable';
 
-export function createProvider(config: Config): QobuzProvider {
+export function createProvider(config: Config): RacingProvider | QobuzProvider {
   if (config.provider === 'qobuzdl') return new QobuzDlProvider(config);
   if (config.provider === 'multi') {
     return new RacingProvider([
-      { name: 'heisenberg', provider: new RemoteAddonProvider(config, config.heisenbergBaseUrl) },
-      { name: 'instable', provider: new InstableProvider(config) },
+      { id: 'monochrome', name: 'Monochrome Lossless Core', type: 'built-in', baseUrl: config.monochromeBaseUrl ?? 'https://tracks.monochrome.st', provider: new MonochromeProvider(config), enabled: true },
+      { id: 'instable', name: 'Arcod Lossless Source', type: 'built-in', baseUrl: config.instableBaseUrl ?? 'https://arcod.xyz', provider: new InstableProvider(config), enabled: true },
     ]);
   }
   if (config.provider === 'http') return new HttpQobuzProvider(config);
@@ -29,6 +29,5 @@ export function createSourceProvider(config: Config, source: IsolatedSource): Qo
   if (source === 'deezer') return new RemoteAddonProvider(config);
   if (source === 'eljohnzc') return new RemoteAddonProvider(config, config.eljohnzcBaseUrl);
   if (source === 'instable') return new InstableProvider(config);
-  if (source === 'heisenberg') return new RemoteAddonProvider(config, config.heisenbergBaseUrl);
   return new LastBabeProvider(config);
 }

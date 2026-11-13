@@ -324,4 +324,92 @@ export class AddonDatabase {
 
     return { allowed: true };
   }
+
+  // --- Admin Console Operations ---
+
+  async getAllUserAddons(options?: {
+    search?: string;
+    filter?: 'all' | 'active' | 'revoked';
+    limit?: number;
+    offset?: number;
+  }): Promise<{ addons: UserAddonRecord[]; total: number }> {
+    if (!this.client) return { addons: [], total: 0 };
+    const limit = Math.min(options?.limit ?? 100, 500);
+    const offset = options?.offset ?? 0;
+
+    let query = this.client
+      .from('user_addons')
+      .select('*', { count: 'exact' });
+
+    if (options?.filter === 'active') {
+      query = query.eq('is_revoked', false);
+    } else if (options?.filter === 'revoked') {
+      query = query.eq('is_revoked', true);
+    }
+
+    if (options?.search) {
+      const term = options.search.trim().toLowerCase();
+      query = query.or(`email.ilike.%${term}%,addon_slug.ilike.%${term}%`);
+    }
+
+    const { data, error, count } = await query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error || !data) return { addons: [], total: 0 };
+    return { addons: data as UserAddonRecord[], total: count ?? data.length };
+  }
+
+  async setAddonRevocation(slug: string, isRevoked: boolean): Promise<boolean> {
+    if (!this.client) return false;
+    const { error } = await this.client
+      .from('user_addons')
+      .update({ is_revoked: isRevoked })
+      .eq('addon_slug', slug);
+    return !error;
+  }
+
+  async getProviderSettings(): Promise<any[]> {
+    if (!this.client) return [];
+    const { data, error } = await this.client
+      .from('provider_settings')
+      .select('*')
+      .order('created_at', { ascending: true });
+    if (error || !data) return [];
+    return data;
+  }
+
+  async setProviderEnabled(id: string, isEnabled: boolean): Promise<boolean> {
+    if (!this.client) return false;
+    const { error } = await this.client
+      .from('provider_settings')
+      .update({ is_enabled: isEnabled })
+      .eq('id', id);
+    return !error;
+  }
+
+  async saveProviderSetting(provider: {
+    id: string;
+    name: string;
+    type: string;
+    base_url: string;
+    is_enabled: boolean;
+    health_status: string;
+    last_tested_at?: string;
+  }): Promise<boolean> {
+    if (!this.client) return false;
+    const { error } = await this.client
+      .from('provider_settings')
+      .upsert(provider);
+    return !error;
+  }
+
+  async deleteProviderSetting(id: string): Promise<boolean> {
+    if (!this.client) return false;
+    const { error } = await this.client
+      .from('provider_settings')
+      .delete()
+      .eq('id', id);
+    return !error;
+  }
 }
