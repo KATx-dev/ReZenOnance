@@ -33,10 +33,22 @@ export class MonochromeProvider implements QobuzProvider {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), Math.max(this.config.requestTimeoutMs, 10000));
       try {
-        const response = await fetch(url, { headers: { accept: 'application/json' }, signal: controller.signal });
+        const response = await fetch(url, {
+          headers: {
+            accept: 'application/json, text/plain, */*',
+            'accept-language': 'en-US,en;q=0.9',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+            referer: 'https://monochrome.st/',
+            origin: 'https://monochrome.st',
+          },
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          const detail = await response.text().catch(() => '');
+          throw new UpstreamError(response.status >= 500 ? 502 : response.status, `Monochrome returned HTTP ${response.status}: ${detail.slice(0, 100)}`);
+        }
         let body: unknown;
         try { body = await response.json(); } catch { throw new UpstreamError(502, 'Monochrome returned invalid JSON'); }
-        if (!response.ok) throw new UpstreamError(response.status >= 500 ? 502 : response.status, 'Monochrome request failed');
         return body;
       } catch (error) {
         lastError = error;
