@@ -282,3 +282,55 @@ test('Admin Console endpoints: auth, overview, provider toggling, and link revoc
     payload: { id: 'monochrome', enabled: true },
   });
 });
+
+test('Direct Auth endpoints: providers, guest session, and me', async () => {
+  // 1. Providers list
+  const provRes = await app.inject({ method: 'GET', url: '/api/auth/providers' });
+  assert.equal(provRes.statusCode, 200);
+  const provData = JSON.parse(provRes.payload);
+  assert.equal(provData.guest, true);
+
+  // 2. Unauthenticated /api/auth/me
+  const unauthMe = await app.inject({ method: 'GET', url: '/api/auth/me' });
+  assert.equal(unauthMe.statusCode, 200);
+  const unauthData = JSON.parse(unauthMe.payload);
+  assert.equal(unauthData.authenticated, false);
+
+  // 3. Create guest session
+  const guestRes = await app.inject({ method: 'POST', url: '/api/auth/guest' });
+  assert.equal(guestRes.statusCode, 200);
+  const guestData = JSON.parse(guestRes.payload);
+  assert.equal(guestData.ok, true);
+  assert.equal(guestData.user.provider, 'guest');
+  assert.ok(guestData.token);
+
+  const guestCookies = (Array.isArray(guestRes.headers['set-cookie'])
+    ? guestRes.headers['set-cookie']
+    : [guestRes.headers['set-cookie']].filter(Boolean)) as string[];
+  const authCookieHeader = guestCookies.find(c => c?.includes('__rz_auth_session'));
+  assert.ok(authCookieHeader, 'Must set __rz_auth_session');
+  const authCookie = authCookieHeader.match(/__rz_auth_session=([^;]+)/)![0];
+
+  // 4. Authenticated /api/auth/me using session cookie
+  const authMe = await app.inject({
+    method: 'GET',
+    url: '/api/auth/me',
+    headers: { cookie: authCookie },
+  });
+  assert.equal(authMe.statusCode, 200);
+  const meData = JSON.parse(authMe.payload);
+  assert.equal(meData.authenticated, true);
+  assert.equal(meData.user.id, guestData.user.id);
+
+  // 5. Claim addon using guest session
+  const claimRes = await app.inject({
+    method: 'POST',
+    url: '/api/user/claim-addon',
+    headers: { cookie: authCookie },
+    payload: {},
+  });
+  assert.equal(claimRes.statusCode, 200);
+  const claimData = JSON.parse(claimRes.payload);
+  assert.equal(claimData.ok, true);
+  assert.equal(claimData.email, guestData.user.email);
+});

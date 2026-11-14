@@ -18,6 +18,19 @@ import {
   benchmarkAndVerifyAddon,
   renderAdminHtml,
 } from './admin.js';
+import {
+  type AuthSession,
+  createAuthToken,
+  verifyAuthToken,
+  createGuestSession,
+  getBaseUrl,
+  getGoogleAuthUrl,
+  exchangeGoogleCode,
+  fetchGoogleProfile,
+  getDiscordAuthUrl,
+  exchangeDiscordCode,
+  fetchDiscordProfile,
+} from './auth.js';
 import { AddonDatabase } from './db.js';
 import type { QobuzProvider, Quality, PublicTrack } from './types.js';
 
@@ -134,7 +147,154 @@ function resolveTracker(cookieValue?: string, zombieValue?: string, headerZombie
 app.get('/api/auth/config', async () => ({
   supabaseUrl: config.supabaseUrl,
   supabaseKey: config.supabaseKey,
+  providers: {
+    google: Boolean(config.googleClientId),
+    discord: Boolean(config.discordClientId),
+    guest: true,
+  },
 }));
+
+app.get('/api/auth/providers', async () => ({
+  google: Boolean(config.googleClientId),
+  discord: Boolean(config.discordClientId),
+  guest: true,
+}));
+
+app.get('/api/auth/google/login', async (request, reply) => {
+  if (!config.googleClientId || !config.googleClientSecret) {
+    return reply.redirect('/?auth_error=' + encodeURIComponent('Google OAuth is not configured on this server. Please use Instant Access or configure GOOGLE_CLIENT_ID & GOOGLE_CLIENT_SECRET.'));
+  }
+  const baseUrl = getBaseUrl(request, config);
+  const redirectUri = `${baseUrl}/api/auth/google/callback`;
+  const state = randomBytes(16).toString('hex');
+  reply.setCookie('__rz_oauth_state', state, {
+    path: '/',
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 600,
+  });
+  return reply.redirect(getGoogleAuthUrl({ clientId: config.googleClientId, redirectUri, state }));
+});
+
+app.get<{ Querystring: { code?: string; state?: string; error?: string } }>('/api/auth/google/callback', async (request, reply) => {
+  if (request.query.error) {
+    return reply.redirect('/?auth_error=' + encodeURIComponent(request.query.error));
+  }
+  const { code, state } = request.query;
+  const savedState = request.cookies['__rz_oauth_state'];
+  if (!code || !state || state !== savedState) {
+    return reply.redirect('/?auth_error=' + encodeURIComponent('Authentication state mismatch. Please try again.'));
+  }
+  reply.clearCookie('__rz_oauth_state', { path: '/' });
+
+  const baseUrl = getBaseUrl(request, config);
+  const redirectUri = `${baseUrl}/api/auth/google/callback`;
+  try {
+    const { accessToken } = await exchangeGoogleCode({
+      code,
+      clientId: config.googleClientId!,
+      clientSecret: config.googleClientSecret!,
+      redirectUri,
+    });
+    const profile = await fetchGoogleProfile(accessToken);
+    const session: AuthSession = {
+      id: profile.id,
+      email: profile.email,
+      name: profile.name,
+      avatar: profile.avatar,
+      provider: 'google',
+      createdAt: Date.now(),
+    };
+    const token = createAuthToken(session, config.idSecret);
+    reply.setCookie('__rz_auth_session', token, {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 30,
+    });
+    return reply.redirect('/?auth=success');
+  } catch (err: any) {
+    return reply.redirect('/?auth_error=' + encodeURIComponent(err.message || 'Google authentication failed'));
+  }
+});
+
+app.get('/api/auth/discord/login', async (request, reply) => {
+  if (!config.discordClientId || !config.discordClientSecret) {
+    return reply.redirect('/?auth_error=' + encodeURIComponent('Discord OAuth is not configured on this server. Please use Instant Access or configure DISCORD_CLIENT_ID & DISCORD_CLIENT_SECRET.'));
+  }
+  const baseUrl = getBaseUrl(request, config);
+  const redirectUri = `${baseUrl}/api/auth/discord/callback`;
+  const state = randomBytes(16).toString('hex');
+  reply.setCookie('__rz_oauth_state', state, {
+    path: '/',
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 600,
+  });
+  return reply.redirect(getDiscordAuthUrl({ clientId: config.discordClientId, redirectUri, state }));
+});
+
+app.get<{ Querystring: { code?: string; state?: string; error?: string } }>('/api/auth/discord/callback', async (request, reply) => {
+  if (request.query.error) {
+    return reply.redirect('/?auth_error=' + encodeURIComponent(request.query.error));
+  }
+  const { code, state } = request.query;
+  const savedState = request.cookies['__rz_oauth_state'];
+  if (!code || !state || state !== savedState) {
+    return reply.redirect('/?auth_error=' + encodeURIComponent('Authentication state mismatch. Please try again.'));
+  }
+  reply.clearCookie('__rz_oauth_state', { path: '/' });
+
+  const baseUrl = getBaseUrl(request, config);
+  const redirectUri = `${baseUrl}/api/auth/discord/callback`;
+  try {
+    const { accessToken } = await exchangeDiscordCode({
+      code,
+      clientId: config.discordClientId!,
+      clientSecret: config.discordClientSecret!,
+      redirectUri,
+    });
+    const profile = await fetchDiscordProfile(accessToken);
+    const session: AuthSession = {
+      id: profile.id,
+      email: profile.email,
+      name: profile.name,
+      avatar: profile.avatar,
+      provider: 'discord',
+      createdAt: Date.now(),
+    };
+    const token = createAuthToken(session, config.idSecret);
+    reply.setCookie('__rz_auth_session', token, {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 30,
+    });
+    return reply.redirect('/?auth=success');
+  } catch (err: any) {
+    return reply.redirect('/?auth_error=' + encodeURIComponent(err.message || 'Discord authentication failed'));
+  }
+});
+
+app.post('/api/auth/guest', async (_request, reply) => {
+  const session = createGuestSession();
+  const token = createAuthToken(session, config.idSecret);
+  reply.setCookie('__rz_auth_session', token, {
+    path: '/',
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 60 * 60 * 24 * 30,
+  });
+  return reply.send({ ok: true, user: session, token });
+});
+
+app.post('/api/auth/logout', async (_request, reply) => {
+  reply.clearCookie('__rz_auth_session', { path: '/' });
+  return reply.send({ ok: true });
+});
 
 app.get('/api/auth/me', async (request, reply) => {
   const zombieHeader = request.headers['x-zombie-tracker'] as string | undefined;
@@ -147,19 +307,38 @@ app.get('/api/auth/me', async (request, reply) => {
     maxAge: 60 * 60 * 24 * 365,
   });
 
+  const sessionCookie = request.cookies['__rz_auth_session'];
   const authHeader = request.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : undefined;
+  const sessionToken = sessionCookie || bearerToken;
+
+  let user: AuthSession | null = null;
+  if (sessionToken) {
+    user = verifyAuthToken(sessionToken, config.idSecret);
+  }
+
+  // Backward-compatibility: verify Supabase JWT if passed
+  if (!user && bearerToken) {
+    const verified = await db.verifyUser(bearerToken);
+    if (verified) {
+      user = {
+        id: verified.id,
+        email: verified.email,
+        name: verified.email.split('@')[0],
+        provider: 'google',
+        createdAt: Date.now(),
+      };
+    }
+  }
+
+  if (!user) {
     return reply.send({ authenticated: false, user: null, tracker });
   }
-  const token = authHeader.substring(7).trim();
-  const verified = await db.verifyUser(token);
-  if (!verified) {
-    return reply.send({ authenticated: false, user: null, tracker });
-  }
-  const addon = await db.getAddonByEmail(verified.email);
+
+  const addon = await db.getAddonByEmail(user.email);
   return reply.send({
     authenticated: true,
-    user: verified,
+    user,
     addon: addon ? { slug: addon.addon_slug, dailyLimit: addon.daily_limit, isRevoked: addon.is_revoked } : null,
     tracker,
   });
@@ -181,13 +360,24 @@ app.post<{ Body?: { email?: string; customSlug?: string; zombieTracker?: string;
 
     const fingerprint = db.hashDeviceFingerprint(tracker, config.idSecret);
 
+    const sessionCookie = request.cookies['__rz_auth_session'];
     const authHeader = request.headers.authorization;
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : undefined;
+    const sessionToken = sessionCookie || bearerToken;
+
     let userId: string | undefined;
     let userEmail: string | undefined;
 
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7).trim();
-      const verified = await db.verifyUser(token);
+    if (sessionToken) {
+      const sessionUser = verifyAuthToken(sessionToken, config.idSecret);
+      if (sessionUser) {
+        userId = sessionUser.id;
+        userEmail = sessionUser.email;
+      }
+    }
+
+    if (!userEmail && bearerToken) {
+      const verified = await db.verifyUser(bearerToken);
       if (verified) {
         userId = verified.id;
         userEmail = verified.email;

@@ -122,6 +122,18 @@ MONOCHROME_BASE_URL=https://tracks.monochrome.st
 # Master Admin Key
 ADMIN_PASSWORD=ReZen#QuantumFLAC-2026!Vault
 
+# Direct OAuth Credentials (No Third-Party Dependencies)
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+DISCORD_CLIENT_ID=your-discord-client-id
+DISCORD_CLIENT_SECRET=your-discord-client-secret
+APP_BASE_URL=https://rezenonance.onrender.com
+
+# Database Settings (Optional - Seamless In-Memory Fallback if Supabase is Offline)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your-supabase-key
+DISABLE_SUPABASE=false
+
 # Security & ID Signing Secret
 QOBUZ_ID_SECRET=change-me-in-production-to-a-secure-random-string
 
@@ -142,6 +154,16 @@ ReZenOnance provides standard addon manifest endpoints compatible with popular a
 - Custom players implementing addon manifest protocols
 
 Users can copy their private addon manifest URL or scan the dynamic QR code directly from the web portal.
+
+---
+
+## 🔑 Authentication & Zero-Friction Access
+
+ReZenOnance does not depend on external authentication services and offers three flexible options:
+1. **Instant Access (Skip Login)**: 1-click guest onboarding. Users can generate, customize, and copy personal addon URLs without signing in or providing an email address.
+2. **Direct Google OAuth**: Sign in directly with Google (`/api/auth/google/login`). Uses `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. Callback: `https://<domain>/api/auth/google/callback`.
+3. **Direct Discord OAuth**: Sign in directly with Discord (`/api/auth/discord/login`). Uses `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`. Callback: `https://<domain>/api/auth/discord/callback`.
+4. **Resilient Local Storage Fallback**: If Supabase is down, paused, or unreachable, ReZenOnance automatically trips its circuit breaker and runs on autonomous in-memory storage so links, playback, and quotas never fail.
 
 ---
 

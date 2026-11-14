@@ -18,6 +18,11 @@ export interface Config {
   adminPassword: string;
   supabaseUrl: string;
   supabaseKey: string;
+  googleClientId?: string;
+  googleClientSecret?: string;
+  discordClientId?: string;
+  discordClientSecret?: string;
+  appBaseUrl?: string;
 }
 
 const positiveInt = (name: string, fallback: number): number => {
@@ -53,5 +58,10 @@ export function loadConfig(): Config {
     adminPassword: process.env.ADMIN_PASSWORD ?? 'ReZen#QuantumFLAC-2026!Vault',
     supabaseUrl: process.env.SUPABASE_URL ?? 'https://dtqqvjcpsyolfvudtonv.supabase.co',
     supabaseKey: process.env.SUPABASE_KEY ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0cXF2amNwc3lvbGZ2dWR0b252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjE1MjMsImV4cCI6MjA4ODUzNzUyM30.MHb8G9ESsEyifBGbQv4jH5mpOS5bkm3c6nkzvmXvk9s',
+    googleClientId: process.env.GOOGLE_CLIENT_ID,
+    googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    discordClientId: process.env.DISCORD_CLIENT_ID,
+    discordClientSecret: process.env.DISCORD_CLIENT_SECRET,
+    appBaseUrl: process.env.APP_BASE_URL,
   };
 }
