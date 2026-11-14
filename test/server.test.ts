@@ -334,3 +334,7 @@ test('Direct Auth endpoints: providers, guest session, and me', async () => {
   assert.equal(claimData.ok, true);
   assert.equal(claimData.email, guestData.user.email);
 });
+
+test.after(async () => {
+  await app.close();
+});

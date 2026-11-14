@@ -23,5 +23,5 @@ stream.compose(new Spec()).pipe(process.stdout);
 let failed = false;
 stream.on('test:fail', () => { failed = true; });
 stream.on('end', () => {
-  if (failed) process.exit(1);
+  process.exit(failed ? 1 : 0);
 });

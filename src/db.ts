@@ -31,9 +31,24 @@ export interface QuotaStatus {
   resetsAtUtc: string;
 }
 
+function withTimeout<T>(promise: PromiseLike<T>, timeoutMs: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('SUPABASE_TIMEOUT')), timeoutMs);
+    promise.then(
+      res => { clearTimeout(timer); resolve(res); },
+      err => { clearTimeout(timer); reject(err); }
+    );
+  });
+}
+
 function createTimeoutFetch(timeoutMs: number) {
   return (input: any, init?: any) => {
-    const signal = init?.signal ?? AbortSignal.timeout(timeoutMs);
+    let signal: AbortSignal;
+    if (init?.signal && typeof (AbortSignal as any).any === 'function') {
+      signal = (AbortSignal as any).any([init.signal, AbortSignal.timeout(timeoutMs)]);
+    } else {
+      signal = AbortSignal.timeout(timeoutMs);
+    }
     return fetch(input, { ...init, signal });
   };
 }
@@ -42,6 +57,7 @@ export class AddonDatabase {
   private client: SupabaseClient | null = null;
   private supabaseHealthy = true;
   private lastCircuitTrip = 0;
+  private timeoutMs = 2000;
   private localAddons: Map<string, UserAddonRecord> = new Map();
   private localDailyUsage: Map<string, { count: number; date: string }> = new Map();
   private localDevices: Map<string, Set<string>> = new Map();
@@ -54,19 +70,23 @@ export class AddonDatabase {
   constructor(private readonly config: Config) {
     const url = process.env.SUPABASE_URL ?? this.config.supabaseUrl;
     const key = process.env.SUPABASE_KEY ?? this.config.supabaseKey;
-    const timeout = process.env.NODE_ENV === 'test' ? 800 : 2000;
+    this.timeoutMs = process.env.NODE_ENV === 'test' ? 600 : 2000;
     if (url && key && process.env.DISABLE_SUPABASE !== 'true') {
       try {
         this.client = createClient(url, key, {
           auth: { persistSession: false },
           global: {
-            fetch: createTimeoutFetch(timeout),
+            fetch: createTimeoutFetch(this.timeoutMs),
           },
         });
       } catch {
         this.client = null;
       }
     }
+  }
+
+  private async queryWithTimeout<T>(promise: PromiseLike<T>): Promise<T> {
+    return withTimeout(promise, this.timeoutMs);
   }
 
   get isConfigured(): boolean {
@@ -101,7 +121,7 @@ export class AddonDatabase {
   async verifyUser(token: string): Promise<{ id: string; email: string } | null> {
     if (!this.isSupabaseAvailable()) return null;
     try {
-      const { data: { user }, error } = await this.client!.auth.getUser(token);
+      const { data: { user }, error } = await this.queryWithTimeout(this.client!.auth.getUser(token));
       if (error || !user || !user.email) {
         if (error) this.tripCircuit();
         return null;
@@ -117,11 +137,13 @@ export class AddonDatabase {
   async getAddonBySlug(slug: string): Promise<UserAddonRecord | null> {
     if (this.isSupabaseAvailable()) {
       try {
-        const { data, error } = await this.client!
-          .from('user_addons')
-          .select('*')
-          .eq('addon_slug', slug)
-          .single();
+        const { data, error } = await this.queryWithTimeout(
+          this.client!
+            .from('user_addons')
+            .select('*')
+            .eq('addon_slug', slug)
+            .single()
+        );
         if (!error && data) {
           this.markHealthy();
           const rec = data as UserAddonRecord;
@@ -142,11 +164,13 @@ export class AddonDatabase {
     const norm = email.toLowerCase().trim();
     if (this.isSupabaseAvailable()) {
       try {
-        const { data, error } = await this.client!
-          .from('user_addons')
-          .select('*')
-          .eq('email', norm)
-          .single();
+        const { data, error } = await this.queryWithTimeout(
+          this.client!
+            .from('user_addons')
+            .select('*')
+            .eq('email', norm)
+            .single()
+        );
         if (!error && data) {
           this.markHealthy();
           const rec = data as UserAddonRecord;
@@ -169,11 +193,13 @@ export class AddonDatabase {
   async getAddonByDevice(deviceFingerprint: string): Promise<UserAddonRecord | null> {
     if (this.isSupabaseAvailable()) {
       try {
-        const { data, error } = await this.client!
-          .from('user_addons')
-          .select('*')
-          .eq('device_fingerprint', deviceFingerprint)
-          .limit(1);
+        const { data, error } = await this.queryWithTimeout(
+          this.client!
+            .from('user_addons')
+            .select('*')
+            .eq('device_fingerprint', deviceFingerprint)
+            .limit(1)
+        );
         if (!error && data && data.length > 0) {
           this.markHealthy();
           const rec = data[0] as UserAddonRecord;
@@ -195,11 +221,13 @@ export class AddonDatabase {
     if (!hardwareFingerprint) return null;
     if (this.isSupabaseAvailable()) {
       try {
-        const { data, error } = await this.client!
-          .from('user_addons')
-          .select('*')
-          .eq('hardware_fingerprint', hardwareFingerprint)
-          .limit(1);
+        const { data, error } = await this.queryWithTimeout(
+          this.client!
+            .from('user_addons')
+            .select('*')
+            .eq('hardware_fingerprint', hardwareFingerprint)
+            .limit(1)
+        );
         if (!error && data && data.length > 0) {
           this.markHealthy();
           const rec = data[0] as UserAddonRecord;
@@ -233,10 +261,12 @@ export class AddonDatabase {
         existing.hardware_fingerprint = params.hardwareFingerprint;
         if (this.isSupabaseAvailable()) {
           try {
-            await this.client!
-              .from('user_addons')
-              .update({ hardware_fingerprint: params.hardwareFingerprint })
-              .eq('id', existing.id);
+            await this.queryWithTimeout(
+              this.client!
+                .from('user_addons')
+                .update({ hardware_fingerprint: params.hardwareFingerprint })
+                .eq('id', existing.id)
+            );
           } catch {
             this.tripCircuit();
           }
@@ -285,11 +315,13 @@ export class AddonDatabase {
 
     if (this.isSupabaseAvailable()) {
       try {
-        const { data, error } = await this.client!
-          .from('user_addons')
-          .insert(insertPayload)
-          .select()
-          .single();
+        const { data, error } = await this.queryWithTimeout(
+          this.client!
+            .from('user_addons')
+            .insert(insertPayload)
+            .select()
+            .single()
+        );
 
         if (!error && data) {
           this.markHealthy();
@@ -319,11 +351,13 @@ export class AddonDatabase {
 
     if (this.isSupabaseAvailable()) {
       try {
-        const [usageRes, leaseRes, ipRes] = await Promise.all([
-          this.client!.from('addon_daily_usage').select('stream_count').eq('slug', slug).eq('usage_date', today).single(),
-          this.client!.from('addon_device_leases').select('device_hash').eq('slug', slug).gte('last_seen_at', new Date(Date.now() - 10 * 60 * 1000).toISOString()),
-          this.client!.from('addon_daily_ips').select('ip_address').eq('slug', slug).eq('usage_date', today),
-        ]);
+        const [usageRes, leaseRes, ipRes] = await this.queryWithTimeout(
+          Promise.all([
+            this.client!.from('addon_daily_usage').select('stream_count').eq('slug', slug).eq('usage_date', today).single(),
+            this.client!.from('addon_device_leases').select('device_hash').eq('slug', slug).gte('last_seen_at', new Date(Date.now() - 10 * 60 * 1000).toISOString()),
+            this.client!.from('addon_daily_ips').select('ip_address').eq('slug', slug).eq('usage_date', today),
+          ])
+        );
 
         const streamCount = usageRes.data?.stream_count ?? 0;
         const activeDevices = leaseRes.data ? leaseRes.data.length : 1;
@@ -376,12 +410,14 @@ export class AddonDatabase {
     if (this.isSupabaseAvailable()) {
       try {
         // 1. Check & increment daily usage
-        const { data: usageData } = await this.client!
-          .from('addon_daily_usage')
-          .select('stream_count')
-          .eq('slug', slug)
-          .eq('usage_date', today)
-          .single();
+        const { data: usageData } = await this.queryWithTimeout(
+          this.client!
+            .from('addon_daily_usage')
+            .select('stream_count')
+            .eq('slug', slug)
+            .eq('usage_date', today)
+            .single()
+        );
 
         const currentStreams = usageData?.stream_count ?? 0;
         if (currentStreams >= addon.daily_limit) {
@@ -392,11 +428,13 @@ export class AddonDatabase {
         }
 
         // 2. Check & register IP address
-        const { data: ips } = await this.client!
-          .from('addon_daily_ips')
-          .select('ip_address')
-          .eq('slug', slug)
-          .eq('usage_date', today);
+        const { data: ips } = await this.queryWithTimeout(
+          this.client!
+            .from('addon_daily_ips')
+            .select('ip_address')
+            .eq('slug', slug)
+            .eq('usage_date', today)
+        );
         const currentIps = (ips ?? []).map((x: { ip_address: string }) => x.ip_address);
         if (!currentIps.includes(clientIp)) {
           if (currentIps.length >= 15) {
@@ -405,20 +443,24 @@ export class AddonDatabase {
               reason: 'Daily IP diversity cap exceeded (Max 15 distinct IPs per 24 hours). Resets at 00:00 UTC.',
             };
           }
-          await this.client!
-            .from('addon_daily_ips')
-            .upsert({ slug, ip_address: clientIp, usage_date: today });
+          await this.queryWithTimeout(
+            this.client!
+              .from('addon_daily_ips')
+              .upsert({ slug, ip_address: clientIp, usage_date: today })
+          );
         }
 
         // 3. Sliding 10-minute device lease check
         const deviceHash = createHash('sha256').update(`${clientIp}:${userAgent}`).digest('hex').substring(0, 16);
         const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
 
-        const { data: activeLeases } = await this.client!
-          .from('addon_device_leases')
-          .select('device_hash')
-          .eq('slug', slug)
-          .gte('last_seen_at', tenMinutesAgo);
+        const { data: activeLeases } = await this.queryWithTimeout(
+          this.client!
+            .from('addon_device_leases')
+            .select('device_hash')
+            .eq('slug', slug)
+            .gte('last_seen_at', tenMinutesAgo)
+        );
 
         const activeHashes = (activeLeases ?? []).map((x: { device_hash: string }) => x.device_hash);
         if (!activeHashes.includes(deviceHash) && activeHashes.length >= 2) {
@@ -429,10 +471,12 @@ export class AddonDatabase {
         }
 
         // Update lease and usage count
-        await Promise.all([
-          this.client!.from('addon_device_leases').upsert({ slug, device_hash: deviceHash, last_seen_at: new Date().toISOString() }),
-          this.client!.from('addon_daily_usage').upsert({ slug, usage_date: today, stream_count: currentStreams + 1 }),
-        ]);
+        await this.queryWithTimeout(
+          Promise.all([
+            this.client!.from('addon_device_leases').upsert({ slug, device_hash: deviceHash, last_seen_at: new Date().toISOString() }),
+            this.client!.from('addon_daily_usage').upsert({ slug, usage_date: today, stream_count: currentStreams + 1 }),
+          ])
+        );
 
         return { allowed: true };
       } catch {
@@ -478,9 +522,9 @@ export class AddonDatabase {
     const limit = Math.min(options?.limit ?? 100, 500);
     const offset = options?.offset ?? 0;
 
-    if (this.client) {
+    if (this.isSupabaseAvailable()) {
       try {
-        let query = this.client
+        let query = this.client!
           .from('user_addons')
           .select('*', { count: 'exact' });
 
@@ -495,15 +539,19 @@ export class AddonDatabase {
           query = query.or(`email.ilike.%${term}%,addon_slug.ilike.%${term}%`);
         }
 
-        const { data, error, count } = await query
-          .order('created_at', { ascending: false })
-          .range(offset, offset + limit - 1);
+        const { data, error, count } = await this.queryWithTimeout(
+          query
+            .order('created_at', { ascending: false })
+            .range(offset, offset + limit - 1)
+        );
 
         if (!error && data) {
+          this.markHealthy();
           return { addons: data as UserAddonRecord[], total: count ?? data.length };
         }
+        if (error) this.tripCircuit();
       } catch {
-        // Fallback to local
+        this.tripCircuit();
       }
     }
 
@@ -523,30 +571,44 @@ export class AddonDatabase {
   async setAddonRevocation(slug: string, isRevoked: boolean): Promise<boolean> {
     const local = this.localAddons.get(slug);
     if (local) local.is_revoked = isRevoked;
-    if (this.client) {
+    if (this.isSupabaseAvailable()) {
       try {
-        const { error } = await this.client
-          .from('user_addons')
-          .update({ is_revoked: isRevoked })
-          .eq('addon_slug', slug);
-        return !error;
-      } catch {}
+        const { error } = await this.queryWithTimeout(
+          this.client!
+            .from('user_addons')
+            .update({ is_revoked: isRevoked })
+            .eq('addon_slug', slug)
+        );
+        if (!error) {
+          this.markHealthy();
+          return true;
+        }
+        this.tripCircuit();
+      } catch {
+        this.tripCircuit();
+      }
     }
     return true;
   }
 
   async getProviderSettings(): Promise<any[]> {
-    if (this.client) {
+    if (this.isSupabaseAvailable()) {
       try {
-        const { data, error } = await this.client
-          .from('provider_settings')
-          .select('*')
-          .order('created_at', { ascending: true });
+        const { data, error } = await this.queryWithTimeout(
+          this.client!
+            .from('provider_settings')
+            .select('*')
+            .order('created_at', { ascending: true })
+        );
         if (!error && data && data.length > 0) {
+          this.markHealthy();
           for (const p of data) this.localProviders.set(p.id, p);
           return data;
         }
-      } catch {}
+        if (error) this.tripCircuit();
+      } catch {
+        this.tripCircuit();
+      }
     }
     return Array.from(this.localProviders.values());
   }
@@ -554,14 +616,22 @@ export class AddonDatabase {
   async setProviderEnabled(id: string, isEnabled: boolean): Promise<boolean> {
     const existing = this.localProviders.get(id);
     if (existing) existing.is_enabled = isEnabled;
-    if (this.client) {
+    if (this.isSupabaseAvailable()) {
       try {
-        const { error } = await this.client
-          .from('provider_settings')
-          .update({ is_enabled: isEnabled })
-          .eq('id', id);
-        return !error;
-      } catch {}
+        const { error } = await this.queryWithTimeout(
+          this.client!
+            .from('provider_settings')
+            .update({ is_enabled: isEnabled })
+            .eq('id', id)
+        );
+        if (!error) {
+          this.markHealthy();
+          return true;
+        }
+        this.tripCircuit();
+      } catch {
+        this.tripCircuit();
+      }
     }
     return true;
   }
@@ -576,27 +646,43 @@ export class AddonDatabase {
     last_tested_at?: string;
   }): Promise<boolean> {
     this.localProviders.set(provider.id, provider);
-    if (this.client) {
+    if (this.isSupabaseAvailable()) {
       try {
-        const { error } = await this.client
-          .from('provider_settings')
-          .upsert(provider);
-        return !error;
-      } catch {}
+        const { error } = await this.queryWithTimeout(
+          this.client!
+            .from('provider_settings')
+            .upsert(provider)
+        );
+        if (!error) {
+          this.markHealthy();
+          return true;
+        }
+        this.tripCircuit();
+      } catch {
+        this.tripCircuit();
+      }
     }
     return true;
   }
 
   async deleteProviderSetting(id: string): Promise<boolean> {
     this.localProviders.delete(id);
-    if (this.client) {
+    if (this.isSupabaseAvailable()) {
       try {
-        const { error } = await this.client
-          .from('provider_settings')
-          .delete()
-          .eq('id', id);
-        return !error;
-      } catch {}
+        const { error } = await this.queryWithTimeout(
+          this.client!
+            .from('provider_settings')
+            .delete()
+            .eq('id', id)
+        );
+        if (!error) {
+          this.markHealthy();
+          return true;
+        }
+        this.tripCircuit();
+      } catch {
+        this.tripCircuit();
+      }
     }
     return true;
   }
