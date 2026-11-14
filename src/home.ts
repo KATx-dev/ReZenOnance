@@ -1284,14 +1284,15 @@ header {
   text-align: center;
   background: rgba(14, 18, 30, 0.6);
   border: 1px solid var(--border);
+  transition: all 0.3s ease;
 }
 .verdict-pass {
   background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(16, 185, 129, 0.35);
 }
 .verdict-warn {
   background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  border: 1px solid rgba(245, 158, 11, 0.35);
 }
 .verdict-badge {
   display: inline-flex;
@@ -1305,8 +1306,255 @@ header {
   letter-spacing: 1px;
   margin-bottom: 14px;
 }
-.badge-pass { background: rgba(16, 185, 129, 0.25); color: #34d399; }
-.badge-warn { background: rgba(245, 158, 11, 0.25); color: var(--amber); }
+.badge-pass { background: rgba(16, 185, 129, 0.25); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+.badge-warn { background: rgba(245, 158, 11, 0.25); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.4); }
+
+/* Listening Gear Selector Styles */
+.gear-selector-box {
+  background: rgba(10, 15, 26, 0.75);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 20px;
+}
+.detect-gear-btn {
+  background: rgba(0, 242, 254, 0.1);
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  color: var(--cyan);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+.detect-gear-btn:hover {
+  background: rgba(0, 242, 254, 0.2);
+  transform: translateY(-1px);
+}
+.gear-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+.gear-opt-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  font-family: inherit;
+  color: var(--text-primary);
+}
+.gear-opt-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.gear-opt-card.active {
+  background: rgba(0, 242, 254, 0.08);
+  border-color: var(--cyan);
+  box-shadow: 0 0 16px rgba(0, 242, 254, 0.2);
+}
+.gear-opt-card.active.gear-lossy {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: var(--amber);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.2);
+}
+.gear-opt-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+.gear-opt-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+.gear-opt-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.gear-opt-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+.badge-lossy { background: rgba(245, 158, 11, 0.2); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.4); }
+.badge-lossless { background: rgba(0, 242, 254, 0.2); color: var(--cyan); border: 1px solid rgba(0, 242, 254, 0.4); }
+.badge-studio { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+.badge-basic { background: rgba(255, 255, 255, 0.08); color: var(--text-muted); }
+
+/* Dual Chain Audit Grid */
+.dual-chain-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+  text-align: left;
+}
+.dual-chain-col {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.dual-chain-title {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dual-chain-val {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.dual-chain-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Interactive Stereo Channel Verification */
+.stereo-channel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+.channel-test-panel {
+  background: rgba(12, 17, 30, 0.8);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.channel-play-btn {
+  background: rgba(0, 242, 254, 0.12);
+  border: 1px solid rgba(0, 242, 254, 0.35);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.channel-play-btn:hover {
+  background: rgba(0, 242, 254, 0.25);
+  box-shadow: 0 0 16px rgba(0, 242, 254, 0.3);
+}
+.channel-play-btn.playing {
+  background: rgba(244, 63, 94, 0.25);
+  border-color: rgba(244, 63, 94, 0.6);
+  color: #fb7185;
+}
+.channel-choice-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.channel-choice-chip {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  text-align: left;
+  transition: all 0.15s;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.channel-choice-chip:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+.channel-choice-chip.selected {
+  background: rgba(0, 242, 254, 0.15);
+  border-color: var(--cyan);
+  color: #fff;
+  font-weight: 700;
+}
+.channel-choice-chip.selected-warn {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: var(--amber);
+  color: var(--amber);
+  font-weight: 700;
+}
+.channel-choice-chip.selected-danger {
+  background: rgba(244, 63, 94, 0.15);
+  border-color: #fb7185;
+  color: #fb7185;
+  font-weight: 700;
+}
+.stereo-status-banner {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: 14px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  line-height: 1.5;
+}
+.stereo-status-pass {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+.stereo-status-warn {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: var(--amber);
+}
+.stereo-status-danger {
+  background: rgba(244, 63, 94, 0.15);
+  border-color: rgba(244, 63, 94, 0.4);
+  color: #fb7185;
+}
+
+/* Lossy Codec High Frequency Probe Styles */
+.codec-probe-box {
+  background: rgba(12, 17, 30, 0.6);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-top: 14px;
+}
 
 /* In-Browser Player Section */
 .player-section {
@@ -2115,6 +2363,62 @@ footer a:hover {
         </div>
       </div>
 
+      <!-- Interactive Listening Hardware & Transducer Selector -->
+      <div class="gear-selector-box" style="margin-bottom:20px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+          <div>
+            <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:var(--cyan); margin-bottom:2px;">
+              Acoustic Transmission Reality Check
+            </div>
+            <div style="font-size:15px; font-weight:700; color:#fff;">
+              Active Listening Hardware & Transducer Link
+            </div>
+          </div>
+          <button class="detect-gear-btn" onclick="detectHardwareDevices()" title="Scan browser audio endpoints">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span>Auto-Scan Endpoints</span>
+          </button>
+        </div>
+
+        <div class="gear-options-grid">
+          <button type="button" class="gear-opt-card active gear-lossy" id="gear-btn-bluetooth" onclick="selectListeningGear('bluetooth')">
+            <span class="gear-opt-badge badge-lossy">Lossy Link</span>
+            <div class="gear-opt-icon">🎧</div>
+            <div class="gear-opt-info">
+              <div class="gear-opt-name">Bluetooth (AAC / SBC)</div>
+              <div class="gear-opt-desc">Wireless lossy bottleneck &middot; ~256-328 kbps compression with brickwall filter</div>
+            </div>
+          </button>
+
+          <button type="button" class="gear-opt-card" id="gear-btn-wired" onclick="selectListeningGear('wired')">
+            <span class="gear-opt-badge badge-lossless">Lossless</span>
+            <div class="gear-opt-icon">🔌</div>
+            <div class="gear-opt-info">
+              <div class="gear-opt-name">Wired 3.5mm AUX / Jack</div>
+              <div class="gear-opt-desc">Direct analog output &middot; Up to OS mixer clock (44.1k - 192k)</div>
+            </div>
+          </button>
+
+          <button type="button" class="gear-opt-card" id="gear-btn-dac" onclick="selectListeningGear('dac')">
+            <span class="gear-opt-badge badge-studio">Audiophile</span>
+            <div class="gear-opt-icon">🎛️</div>
+            <div class="gear-opt-info">
+              <div class="gear-opt-name">External USB-C DAC / Amp</div>
+              <div class="gear-opt-desc">Dedicated hardware DAC &middot; Bit-perfect up to 192 kHz / 24-bit PCM</div>
+            </div>
+          </button>
+
+          <button type="button" class="gear-opt-card" id="gear-btn-speakers" onclick="selectListeningGear('speakers')">
+            <span class="gear-opt-badge badge-basic">Built-in</span>
+            <div class="gear-opt-icon">🔊</div>
+            <div class="gear-opt-info">
+              <div class="gear-opt-name">Device Speakers (Laptop / Phone)</div>
+              <div class="gear-opt-desc">Built-in transducers &middot; Limited frequency response & narrow stereo</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
       <!-- Real-time Progress Bar -->
       <div class="benchmark-progress-wrap" id="benchmark-progress-wrap" style="display:none;">
         <div class="benchmark-status-text">
@@ -2127,15 +2431,36 @@ footer a:hover {
       </div>
 
       <!-- Overall Audiophile Readiness Verdict -->
-      <div class="verdict-box verdict-pass" id="lab-verdict-box" style="margin-bottom:24px;">
-        <div class="verdict-badge badge-pass" id="verdict-badge-pill">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          <span id="verdict-tier-text">Tier 1 &middot; Studio Lossless Bit-Perfect Ready</span>
+      <div class="verdict-box verdict-warn" id="lab-verdict-box" style="margin-bottom:24px;">
+        <div class="verdict-badge badge-warn" id="verdict-badge-pill">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span id="verdict-tier-text">Tier 4 &middot; Lossy Wireless Bottleneck (AAC / SBC ~256 kbps)</span>
         </div>
-        <h3 id="verdict-headline" style="font-size:22px; font-weight:800; color:#fff; margin-bottom:8px;">Your Browser & Hardware Fully Support High-Resolution FLAC</h3>
+        <h3 id="verdict-headline" style="font-size:22px; font-weight:800; color:#fff; margin-bottom:8px;">Lossy Bluetooth Codec Active (~256 kbps AAC / SBC)</h3>
         <p id="verdict-summary" style="font-size:14px; line-height:1.6; max-width:760px; margin:0 auto; color:var(--text-secondary);">
-          Your browser audio pipeline successfully passed 24-bit / 192 kHz FLAC bitstream decoding, uncompressed PCM synthesis, and multi-threaded DSP audio processing without frame drops.
+          Your browser decodes 24-bit / 192 kHz FLAC in software, but your headphones connect via Bluetooth A2DP. Bluetooth enforces lossy codec compression (AAC/SBC capped at ~256-328 kbps) with an inherent ~16.5-17.5 kHz brickwall filter. To experience uncompressed studio lossless (1,411 to 9,216 kbps PCM), connect via 3.5mm wired cable or an external USB-C DAC.
         </p>
+
+        <!-- Dual Chain Audit Grid (Software Decoder vs Physical Transmission) -->
+        <div class="dual-chain-grid">
+          <div class="dual-chain-col">
+            <div class="dual-chain-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/></svg>
+              <span>Browser Bitstream Decoder</span>
+            </div>
+            <div class="dual-chain-val" id="audit-sw-val" style="color:#34d399;">24-Bit / 192 kHz FLAC Supported</div>
+            <div class="dual-chain-desc" id="audit-sw-desc">Chromium audio decoder &amp; Web Audio DSP synthesis engine pass uncompressed high-res container bitstreams.</div>
+          </div>
+
+          <div class="dual-chain-col">
+            <div class="dual-chain-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+              <span>Acoustic Output Reality</span>
+            </div>
+            <div class="dual-chain-val" id="audit-hw-val" style="color:var(--amber);">Lossy Wireless Link (~256 kbps)</div>
+            <div class="dual-chain-desc" id="audit-hw-desc">Audio is re-encoded by OS Bluetooth stack to AAC/SBC. Connect wired 3.5mm or USB-C DAC for true uncompressed playback.</div>
+          </div>
+        </div>
       </div>
 
       <!-- 4-Tier Native FLAC Decoding Matrix -->
@@ -2254,13 +2579,13 @@ footer a:hover {
         </div>
       </div>
 
-      <!-- Interactive Audiophile Sound Lab (Instant verification, never stuck) -->
+      <!-- Interactive Audiophile Sound Lab (True interactive verification, never fake-pass) -->
       <div class="audition-toolkit-card">
         <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
           <div>
-            <h4 style="font-size:16px; font-weight:800; color:#fff; margin-bottom:4px;">Acoustic & Dynamic Range Spot-Check</h4>
+            <h4 style="font-size:16px; font-weight:800; color:#fff; margin-bottom:4px;">Acoustic & Dynamic Range Calibration Lab</h4>
             <p style="font-size:13px; color:var(--text-muted); margin:0;">
-              Audition instant acoustic calibration tones without leaving the page. Verify channel separation, sub-bass extension, and high-frequency linearity.
+              Audition instant acoustic calibration tones. Physically verify stereo separation, detect single-bud / mono issues, inspect Bluetooth AAC brickwall cutoffs, and probe sub-bass extension.
             </p>
           </div>
           <button onclick="stopActiveTone()" style="background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.35); color:#fb7185; padding:8px 16px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer;">
@@ -2268,42 +2593,174 @@ footer a:hover {
           </button>
         </div>
 
-        <div class="audition-tools-grid">
-          <!-- Stereo Ping -->
-          <button class="audition-tool-btn" id="tool-stereo-ping" onclick="runStereoPingCheck()">
-            <div class="tool-btn-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
-              <span>Stereo Balance (L / R)</span>
+        <!-- 1. Interactive Physical Stereo Channel & Earbud Presence Verification -->
+        <div style="margin-top:18px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+            <div style="font-size:13px; font-weight:700; color:#fff; display:flex; align-items:center; gap:6px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2.5"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+              <span>Physical Left / Right Channel &amp; Earbud Verification</span>
             </div>
-            <div class="tool-btn-desc">Pings Left, Center, and Right to verify true stereo separation & non-mono downmixing.</div>
-          </button>
+            <div style="font-size:11px; color:var(--text-muted);">
+              Play isolated tones &amp; confirm which ear hears sound
+            </div>
+          </div>
 
-          <!-- 20Hz - 20kHz Sweep -->
-          <button class="audition-tool-btn" id="tool-sweep" onclick="runFrequencySweep()">
-            <div class="tool-btn-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 12h5l3-9 4 18 3-9h5"/></svg>
-              <span>20Hz – 20kHz Sweep</span>
+          <div class="stereo-channel-grid">
+            <!-- Left Channel Test Panel -->
+            <div class="channel-test-panel">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--cyan);">Left Channel (Ch 1)</span>
+                <span style="font-size:11px; color:var(--text-muted); font-family:'JetBrains Mono',monospace;">Pan: -1.0 (100% Left)</span>
+              </div>
+              <button type="button" class="channel-play-btn" id="btn-play-left-ch" onclick="playIsolatedChannel(0)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <span>Play Left Channel Chime</span>
+              </button>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Where do you hear this sound?</div>
+              <div class="channel-choice-group" id="left-choice-group">
+                <button type="button" class="channel-choice-chip" id="choice-left-left" onclick="recordStereoResponse('left', 'left')">
+                  <span>◀ In Left Ear Only</span>
+                  <span style="font-size:10px; color:#34d399;">✓ Expected</span>
+                </button>
+                <button type="button" class="channel-choice-chip" id="choice-left-both" onclick="recordStereoResponse('left', 'both')">
+                  <span>👥 In Both Ears</span>
+                  <span style="font-size:10px; color:var(--amber);">Mono Downmix</span>
+                </button>
+                <button type="button" class="channel-choice-chip" id="choice-left-silent" onclick="recordStereoResponse('left', 'silent')">
+                  <span>🔇 Inaudible / Silence</span>
+                  <span style="font-size:10px; color:#fb7185;">Bud in Case?</span>
+                </button>
+                <button type="button" class="channel-choice-chip" id="choice-left-right" onclick="recordStereoResponse('left', 'right')">
+                  <span>▶ In Right Ear</span>
+                  <span style="font-size:10px; color:var(--amber);">Inverted</span>
+                </button>
+              </div>
             </div>
-            <div class="tool-btn-desc">Smooth logarithmic sine sweep from sub-bass to treble air with live frequency readout.</div>
-          </button>
 
-          <!-- 30Hz Sub-Bass -->
-          <button class="audition-tool-btn" id="tool-sub-tone" onclick="toggleTone(30, 0.35, 'tool-sub-tone')">
-            <div class="tool-btn-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              <span>30 Hz Sub-Bass Tone</span>
+            <!-- Right Channel Test Panel -->
+            <div class="channel-test-panel">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--purple);">Right Channel (Ch 2)</span>
+                <span style="font-size:11px; color:var(--text-muted); font-family:'JetBrains Mono',monospace;">Pan: +1.0 (100% Right)</span>
+              </div>
+              <button type="button" class="channel-play-btn" id="btn-play-right-ch" onclick="playIsolatedChannel(1)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <span>Play Right Channel Chime</span>
+              </button>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Where do you hear this sound?</div>
+              <div class="channel-choice-group" id="right-choice-group">
+                <button type="button" class="channel-choice-chip" id="choice-right-right" onclick="recordStereoResponse('right', 'right')">
+                  <span>▶ In Right Ear Only</span>
+                  <span style="font-size:10px; color:#34d399;">✓ Expected</span>
+                </button>
+                <button type="button" class="channel-choice-chip" id="choice-right-both" onclick="recordStereoResponse('right', 'both')">
+                  <span>👥 In Both Ears</span>
+                  <span style="font-size:10px; color:var(--amber);">Mono Downmix</span>
+                </button>
+                <button type="button" class="channel-choice-chip" id="choice-right-silent" onclick="recordStereoResponse('right', 'silent')">
+                  <span>🔇 Inaudible / Silence</span>
+                  <span style="font-size:10px; color:#fb7185;">Bud in Case?</span>
+                </button>
+                <button type="button" class="channel-choice-chip" id="choice-right-left" onclick="recordStereoResponse('right', 'left')">
+                  <span>◀ In Left Ear</span>
+                  <span style="font-size:10px; color:var(--amber);">Inverted</span>
+                </button>
+              </div>
             </div>
-            <div class="tool-btn-desc">Pure sub-bass vibration to test transducer physical rumble and low-end extension.</div>
-          </button>
+          </div>
 
-          <!-- 16kHz Treble Air -->
-          <button class="audition-tool-btn" id="tool-treble-tone" onclick="toggleTone(16000, 0.12, 'tool-treble-tone')">
-            <div class="tool-btn-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              <span>16 kHz Treble Air Tone</span>
+          <!-- Dynamic Acoustic Result Banner -->
+          <div class="stereo-status-banner" id="stereo-status-banner">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div id="stereo-status-banner-text">
+              ⚪ <strong>Stereo Separation Pending:</strong> Click <em>Play Left Channel</em> and <em>Play Right Channel</em> above, then confirm what you heard in each ear.
             </div>
-            <div class="tool-btn-desc">Clean ultrasonic sine to test anti-aliasing reconstruction and high-res DAC filters.</div>
-          </button>
+          </div>
+        </div>
+
+        <!-- 2. Bluetooth AAC / SBC High-Frequency Cutoff & Aliasing Diagnostic -->
+        <div class="codec-probe-box">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
+            <div>
+              <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:#c084fc; margin-bottom:2px;">
+                Lossy Bluetooth Codec Diagnostic
+              </div>
+              <div style="font-size:14px; font-weight:700; color:#fff;">
+                AAC &amp; SBC Codec Brickwall Cutoff &amp; Aliasing Probe
+              </div>
+            </div>
+            <div style="font-size:11px; color:var(--text-muted);">
+              Audition ultrasonic test tones
+            </div>
+          </div>
+          <p style="font-size:12px; color:var(--text-secondary); line-height:1.5; margin-bottom:12px;">
+            Standard Bluetooth AAC (256 kbps) and SBC codecs apply brickwall low-pass filters between 16.5 kHz and 18.5 kHz. High frequencies transmitted through lossy codecs often create audible metallic chatter, flutter, or bird-like chirping in lower registers (intermodulation aliasing). True wired lossless DACs reproduce clean ultrasonic sines with zero audible buzz.
+          </p>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+            <button class="audition-tool-btn" style="flex:1; min-width:200px;" id="tool-probe-17k" onclick="toggleTone(17500, 0.12, 'tool-probe-17k')">
+              <div class="tool-btn-title">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <span>17.5 kHz AAC Brickwall Probe</span>
+              </div>
+              <div class="tool-btn-desc">Tests AAC 256kbps brickwall filter &amp; quantizer flutter.</div>
+            </button>
+            <button class="audition-tool-btn" style="flex:1; min-width:200px;" id="tool-probe-18k" onclick="toggleTone(18500, 0.10, 'tool-probe-18k')">
+              <div class="tool-btn-title">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <span>18.5 kHz SBC/AAC Cutoff Probe</span>
+              </div>
+              <div class="tool-btn-desc">Tests high-frequency limits of wireless audio receivers.</div>
+            </button>
+          </div>
+          <div style="display:flex; gap:12px; flex-wrap:wrap; font-size:12px; background:rgba(0,0,0,0.3); padding:8px 12px; border-radius:8px;">
+            <span style="color:var(--text-muted); font-weight:700;">Diagnostic Guide:</span>
+            <span style="color:#34d399;">✓ Faint clean pitch or pure silence = True Lossless DAC Linearity</span>
+            <span style="color:#fb7185;">⚠️ Metallic buzzing or chirping = Bluetooth Codec Aliasing Distortion</span>
+          </div>
+        </div>
+
+        <!-- 3. Dynamic Range & Frequency Sweep Tools -->
+        <div style="margin-top:16px;">
+          <div style="font-size:13px; font-weight:700; color:#fff; margin-bottom:8px;">
+            Acoustic Sweeps &amp; Transducer Dynamics
+          </div>
+          <div class="audition-tools-grid" style="margin-top:0;">
+            <!-- Stereo Alternating Ping -->
+            <button class="audition-tool-btn" id="tool-stereo-ping" onclick="runStereoPingCheck()">
+              <div class="tool-btn-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+                <span>L / R Alternating Ping</span>
+              </div>
+              <div class="tool-btn-desc">Rapidly pulses Left, Center, and Right for quick acoustic checks.</div>
+            </button>
+
+            <!-- 20Hz - 20kHz Sweep -->
+            <button class="audition-tool-btn" id="tool-sweep" onclick="runFrequencySweep()">
+              <div class="tool-btn-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 12h5l3-9 4 18 3-9h5"/></svg>
+                <span>20Hz – 20kHz Sweep</span>
+              </div>
+              <div class="tool-btn-desc">Smooth logarithmic sine sweep from sub-bass to treble air.</div>
+            </button>
+
+            <!-- 30Hz Sub-Bass -->
+            <button class="audition-tool-btn" id="tool-sub-tone" onclick="toggleTone(30, 0.35, 'tool-sub-tone')">
+              <div class="tool-btn-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <span>30 Hz Sub-Bass Tone</span>
+              </div>
+              <div class="tool-btn-desc">Pure sub-bass vibration to test transducer physical rumble.</div>
+            </button>
+
+            <!-- 16kHz Treble Air -->
+            <button class="audition-tool-btn" id="tool-treble-tone" onclick="toggleTone(16000, 0.12, 'tool-treble-tone')">
+              <div class="tool-btn-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <span>16 kHz Treble Air Tone</span>
+              </div>
+              <div class="tool-btn-desc">Clean ultrasonic sine to test anti-aliasing reconstruction.</div>
+            </button>
+          </div>
         </div>
 
         <!-- Live Frequency / Panning Readout Gauge -->
@@ -3186,6 +3643,177 @@ footer a:hover {
     }
   }
 
+  // --- State for Diagnostic Lab ---
+  var activeListeningGear = 'bluetooth'; // Default to wireless/Bluetooth
+  var lastBenchmarkResults = null;
+  var stereoTestState = { leftChoice: null, rightChoice: null };
+
+  window.selectListeningGear = function(gearId) {
+    activeListeningGear = gearId;
+    var cards = document.querySelectorAll('.gear-opt-card');
+    cards.forEach(function(c) {
+      c.classList.remove('active');
+      c.classList.remove('gear-lossy');
+    });
+    var sel = document.getElementById('gear-btn-' + gearId);
+    if (sel) {
+      sel.classList.add('active');
+      if (gearId === 'bluetooth') sel.classList.add('gear-lossy');
+    }
+    updateVerdictDisplay();
+  };
+
+  window.detectHardwareDevices = async function() {
+    var pRouteEl = document.getElementById('platform-output-route');
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(function(t) { t.stop(); });
+      } catch (e) {}
+    }
+    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+      try {
+        var devices = await navigator.mediaDevices.enumerateDevices();
+        var audioOutputs = devices.filter(function(d) { return d.kind === 'audiooutput'; });
+        var audioInputs = devices.filter(function(d) { return d.kind === 'audioinput'; });
+        var allLabels = audioOutputs.map(function(d) { return d.label; }).concat(audioInputs.map(function(d) { return d.label; })).join(' ').toLowerCase();
+
+        var isBt = /bluetooth|wireless|airpod|buds|tws|wh-|wf-|freebuds|tune|anc|enco|headset|realme|boat|noise/i.test(allLabels);
+        var isDac = /dac|fiio|topping|qudelix|dragonfly|chord|schiit|hidizs|moondrop|ifiaudio/i.test(allLabels);
+
+        if (isBt) {
+          selectListeningGear('bluetooth');
+        } else if (isDac) {
+          selectListeningGear('dac');
+        } else if (audioOutputs.length > 0 && audioOutputs[0].label) {
+          selectListeningGear('wired');
+        }
+
+        if (audioOutputs.length > 0 && audioOutputs[0].label && pRouteEl) {
+          var lbl = audioOutputs[0].label;
+          pRouteEl.innerText = lbl.length > 30 ? lbl.substring(0, 30) + '...' : lbl;
+        }
+      } catch (e) {}
+    }
+  };
+
+  window.updateVerdictDisplay = function() {
+    if (!lastBenchmarkResults) return;
+    var b = lastBenchmarkResults;
+    var clockRate = b.clockRate || 48000;
+    var maxHeadroom = b.maxHeadroom || 48000;
+    var flacMaster = b.flacMaster || { supported: false };
+    var flacHires = b.flacHires || { supported: false };
+    var flacCd = b.flacCd || { supported: false };
+
+    var canDo192k = flacMaster.supported && maxHeadroom >= 192000;
+    var canDo96k = flacHires.supported && maxHeadroom >= 96000;
+    var canDo44k = flacCd.supported && maxHeadroom >= 44100;
+
+    var verdictBox = document.getElementById('lab-verdict-box');
+    var verdictPill = document.getElementById('verdict-badge-pill');
+    var verdictTier = document.getElementById('verdict-tier-text');
+    var verdictHead = document.getElementById('verdict-headline');
+    var verdictSum = document.getElementById('verdict-summary');
+    var auditSwVal = document.getElementById('audit-sw-val');
+    var auditSwDesc = document.getElementById('audit-sw-desc');
+    var auditHwVal = document.getElementById('audit-hw-val');
+    var auditHwDesc = document.getElementById('audit-hw-desc');
+
+    // Update Software capability column
+    if (auditSwVal) {
+      if (canDo192k) {
+        auditSwVal.innerText = '24-Bit / 192 kHz FLAC Supported';
+        auditSwVal.style.color = '#34d399';
+        if (auditSwDesc) auditSwDesc.innerText = 'Native FLAC bitstream decoder & 192 kHz DSP synthesis headroom verified.';
+      } else if (canDo96k) {
+        auditSwVal.innerText = '24-Bit / 96 kHz FLAC Supported';
+        auditSwVal.style.color = 'var(--cyan)';
+        if (auditSwDesc) auditSwDesc.innerText = 'Browser supports high-res 96 kHz FLAC bitstream decoding.';
+      } else {
+        auditSwVal.innerText = '16-Bit / 44.1 kHz FLAC Supported';
+        auditSwVal.style.color = '#fff';
+        if (auditSwDesc) auditSwDesc.innerText = 'Standard Redbook CD FLAC playback verified.';
+      }
+    }
+
+    // Evaluate Acoustic Transmission Chain
+    if (activeListeningGear === 'bluetooth') {
+      if (verdictBox) verdictBox.className = 'verdict-box verdict-warn';
+      if (verdictPill) {
+        verdictPill.className = 'verdict-badge badge-warn';
+        verdictPill.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> <span id="verdict-tier-text">Tier 4 &middot; Lossy Wireless Bottleneck (AAC / SBC ~256 kbps)</span>';
+      }
+      if (verdictHead) verdictHead.innerText = 'Lossy Bluetooth Codec Active (~256 kbps AAC / SBC)';
+      if (verdictSum) verdictSum.innerText = 'Your browser decodes 24-bit / 192 kHz FLAC in software, but your headphones connect via Bluetooth A2DP. Bluetooth enforces lossy codec compression (AAC/SBC capped at ~256-328 kbps) with an inherent ~16.5-17.5 kHz brickwall filter. To experience uncompressed studio lossless (1,411 to 9,216 kbps PCM), connect via 3.5mm wired cable or an external USB-C DAC.';
+      if (auditHwVal) {
+        auditHwVal.innerText = 'Lossy Wireless Link (~256 kbps)';
+        auditHwVal.style.color = 'var(--amber)';
+      }
+      if (auditHwDesc) auditHwDesc.innerText = 'Audio is re-encoded by OS Bluetooth stack to AAC/SBC. Connect wired 3.5mm or USB-C DAC for true uncompressed playback.';
+
+    } else if (activeListeningGear === 'speakers') {
+      if (verdictBox) verdictBox.className = 'verdict-box verdict-warn';
+      if (verdictPill) {
+        verdictPill.className = 'verdict-badge badge-warn';
+        verdictPill.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <span id="verdict-tier-text">Tier 3 &middot; Built-in Device Speakers</span>';
+      }
+      if (verdictHead) verdictHead.innerText = 'Device Speaker Transducer Active';
+      if (verdictSum) verdictSum.innerText = 'Hardware supports lossless decoding, but built-in smartphone or laptop speakers lack acoustic dynamic range, sub-bass extension (<80 Hz), and true stereo width. Connect high-fidelity headphones for studio clarity.';
+      if (auditHwVal) {
+        auditHwVal.innerText = 'Built-in Transducer (Limited Bass)';
+        auditHwVal.style.color = 'var(--amber)';
+      }
+      if (auditHwDesc) auditHwDesc.innerText = 'Physical speaker drivers cannot reproduce full studio dynamic range or low-end sub-bass extension.';
+
+    } else {
+      // Wired or External DAC
+      if (clockRate >= 192000 && canDo192k) {
+        if (verdictBox) verdictBox.className = 'verdict-box verdict-pass';
+        if (verdictPill) {
+          verdictPill.className = 'verdict-badge badge-pass';
+          verdictPill.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> <span id="verdict-tier-text">Tier 1 &middot; Bit-Perfect Studio Master Ready (24-bit / 192 kHz)</span>';
+        }
+        if (verdictHead) verdictHead.innerText = 'Audiophile Master Class Verified';
+        if (verdictSum) verdictSum.innerText = 'Direct bit-perfect 192 kHz hardware clock confirmed with zero OS downsampling. Studio masters reach your ears untouched at 9,216 kbps PCM.';
+        if (auditHwVal) {
+          auditHwVal.innerText = 'Bit-Perfect 192 kHz Direct Stream';
+          auditHwVal.style.color = '#34d399';
+        }
+        if (auditHwDesc) auditHwDesc.innerText = 'Dedicated 192,000 Hz hardware clock active with zero OS mixer resampling or frame drops.';
+
+      } else if (clockRate >= 96000 && canDo96k) {
+        if (verdictBox) verdictBox.className = 'verdict-box verdict-pass';
+        if (verdictPill) {
+          verdictPill.className = 'verdict-badge badge-pass';
+          verdictPill.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> <span id="verdict-tier-text">Tier 2 &middot; High-Resolution Lossless Ready (24-bit / 96 kHz)</span>';
+        }
+        if (verdictHead) verdictHead.innerText = 'High-Resolution Lossless Verified';
+        if (verdictSum) verdictSum.innerText = 'Direct 96 kHz studio clock confirmed with low latency and clean high-frequency extension.';
+        if (auditHwVal) {
+          auditHwVal.innerText = 'High-Res 96 kHz DAC Clock';
+          auditHwVal.style.color = '#34d399';
+        }
+        if (auditHwDesc) auditHwDesc.innerText = 'Hardware clock supports 96,000 Hz studio audio without jitter.';
+
+      } else {
+        // Clock rate < 96000 (e.g. 44,100 Hz or 48,000 Hz)
+        if (verdictBox) verdictBox.className = 'verdict-box verdict-pass';
+        if (verdictPill) {
+          verdictPill.className = 'verdict-badge badge-pass';
+          verdictPill.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> <span id="verdict-tier-text">Tier 3 &middot; Standard CD Lossless Ready (16-bit / 44.1 kHz)</span>';
+        }
+        if (verdictHead) verdictHead.innerText = 'Standard CD Lossless Verified (' + clockRate.toLocaleString() + ' Hz OS Resampling)';
+        if (verdictSum) verdictSum.innerText = 'Your active DAC output is clocked at ' + clockRate.toLocaleString() + ' Hz. Any 96k/192k studio tracks will be resampled by Windows Shared Mode (WASAPI) or Android OS mixer down to ' + (clockRate / 1000).toFixed(1) + ' kHz. To unlock Tier 1 Bit-Perfect 192 kHz: open Windows Sound Settings -> Device Properties -> Advanced, and set Default Format to 24-bit, 192000 Hz (Studio Quality), or connect a dedicated bit-perfect USB-C DAC.';
+        if (auditHwVal) {
+          auditHwVal.innerText = 'Clocked at ' + clockRate.toLocaleString() + ' Hz (CD Standard)';
+          auditHwVal.style.color = 'var(--cyan)';
+        }
+        if (auditHwDesc) auditHwDesc.innerText = 'OS audio mixer resamples high-res streams to match active ' + clockRate.toLocaleString() + ' Hz clock.';
+      }
+    }
+  };
+
   // --- Main Cross-Platform Hardware Benchmark ---
   window.runHardwareBenchmark = async function() {
     if (isBenchmarking) return;
@@ -3349,7 +3977,6 @@ footer a:hover {
         }
       } catch (e) {}
       if (pGpuEl) {
-        // Shorten long strings
         pGpuEl.innerText = gpuString.length > 36 ? gpuString.substring(0, 36) + '...' : gpuString;
         pGpuEl.title = gpuString;
       }
@@ -3360,10 +3987,14 @@ footer a:hover {
         try {
           var devices = await navigator.mediaDevices.enumerateDevices();
           var audioOutputs = devices.filter(function(d) { return d.kind === 'audiooutput'; });
+          var audioInputs = devices.filter(function(d) { return d.kind === 'audioinput'; });
+          var allLabels = audioOutputs.map(function(d) { return d.label; }).concat(audioInputs.map(function(d) { return d.label; })).join(' ').toLowerCase();
+
+          isBluetooth = /bluetooth|wireless|airpod|buds|tws|wh-|wf-|freebuds|tune|anc|enco|headset|realme|boat|noise/i.test(allLabels);
+
           if (audioOutputs.length > 0 && audioOutputs[0].label) {
             var outName = audioOutputs[0].label;
             if (pRouteEl) pRouteEl.innerText = outName.length > 30 ? outName.substring(0, 30) + '...' : outName;
-            isBluetooth = /bluetooth|wireless|airpod|buds|wh-|wf-|headset/i.test(outName);
           } else {
             if (pRouteEl) pRouteEl.innerText = isAndroid ? 'Android AudioTrack / AAudio' : (isWindows ? 'Windows WASAPI Endpoint' : 'Default Hardware Endpoint');
           }
@@ -3393,50 +4024,26 @@ footer a:hover {
         if (pTextEl) pTextEl.innerHTML = '<strong>Audio Engine:</strong> Native lossless pipeline active. CoreAudio / PipeWire supports bit-perfect rate switching up to 192 kHz when connected to a compatible DAC.';
       }
 
-      // Step 6 (100%): Calculate Audiophile Readiness Verdict Tier
-      setProgress(100, 'Benchmark complete! All audio probes verified.');
+      // Store results and evaluate
+      lastBenchmarkResults = {
+        clockRate: clockRate,
+        maxHeadroom: maxHeadroom,
+        flacCd: flacCd,
+        flacStudio: flacStudio,
+        flacHires: flacHires,
+        flacMaster: flacMaster,
+        dspSpeed: dspSpeed,
+        isAndroid: isAndroid,
+        isWindows: isWindows
+      };
 
-      var verdictBox = document.getElementById('lab-verdict-box');
-      var verdictPill = document.getElementById('verdict-badge-pill');
-      var verdictTier = document.getElementById('verdict-tier-text');
-      var verdictHead = document.getElementById('verdict-headline');
-      var verdictSum = document.getElementById('verdict-summary');
-
-      var canDo192k = flacMaster.supported && maxHeadroom >= 192000;
-      var canDo96k = flacHires.supported && maxHeadroom >= 96000;
-      var canDo44k = flacCd.supported && maxHeadroom >= 44100;
-
-      if (canDo192k && !isBluetooth) {
-        if (verdictBox) verdictBox.className = 'verdict-box verdict-pass';
-        if (verdictPill) { verdictPill.className = 'verdict-badge badge-pass'; }
-        if (verdictTier) verdictTier.innerText = '🌟 Tier 1 · Bit-Perfect Studio Master Ready (24-bit / 192 kHz)';
-        if (verdictHead) verdictHead.innerText = 'Audiophile Master Class Verified';
-        if (verdictSum) verdictSum.innerText = 'Your browser and hardware successfully verified 24-bit / 192 kHz native FLAC decoding, 192 kHz DSP synthesis headroom, and clean uncompressed stereo reproduction. Every subtle detail of studio recordings will reach your ears untouched.';
-      } else if (canDo96k || (canDo192k && isBluetooth)) {
-        if (verdictBox) verdictBox.className = 'verdict-box verdict-pass';
-        if (verdictPill) { verdictPill.className = 'verdict-badge badge-pass'; }
-        if (verdictTier) verdictTier.innerText = '🎵 Tier 2 · High-Resolution Lossless Ready (24-bit / 96 kHz)';
-        if (verdictHead) verdictHead.innerText = 'High-Resolution Lossless Verified';
-        if (verdictSum) {
-          if (isBluetooth) {
-            verdictSum.innerText = 'Your browser decodes high-res FLAC perfectly, but your current wireless connection compresses audio over the air. Switch to wired USB-C or LDAC for full studio transparency.';
-          } else {
-            verdictSum.innerText = 'Your browser and audio hardware support high-resolution 24-bit / 96 kHz FLAC streams with smooth frame delivery and low latency.';
-          }
-        }
-      } else if (canDo44k) {
-        if (verdictBox) verdictBox.className = 'verdict-box verdict-pass';
-        if (verdictPill) { verdictPill.className = 'verdict-badge badge-pass'; }
-        if (verdictTier) verdictTier.innerText = '💿 Tier 3 · Standard CD Lossless Ready (16-bit / 44.1 kHz)';
-        if (verdictHead) verdictHead.innerText = 'CD Lossless Verified';
-        if (verdictSum) verdictSum.innerText = 'Bit-perfect Redbook CD lossless playback (16-bit / 44.1 kHz FLAC) verified. Ideal for uncompressed standard streaming.';
+      if (isBluetooth) {
+        selectListeningGear('bluetooth');
       } else {
-        if (verdictBox) verdictBox.className = 'verdict-box verdict-warn';
-        if (verdictPill) { verdictPill.className = 'verdict-badge badge-warn'; }
-        if (verdictTier) verdictTier.innerText = '⚠️ Tier 4 · Limited Audio Pipeline';
-        if (verdictHead) verdictHead.innerText = 'Audio Decoding Notice';
-        if (verdictSum) verdictSum.innerText = 'Hardware FLAC decoding is restricted by your browser. Streams will be converted or software-decoded before playback.';
+        updateVerdictDisplay();
       }
+
+      setProgress(100, 'Benchmark complete! All audio probes verified.');
 
       setTimeout(function() {
         if (pWrap) pWrap.style.display = 'none';
@@ -3471,9 +4078,10 @@ footer a:hover {
     }
     labActiveNodes = [];
 
-    var btns = document.querySelectorAll('.audition-tool-btn');
+    var btns = document.querySelectorAll('.audition-tool-btn, .channel-play-btn');
     for (var j = 0; j < btns.length; j++) {
       btns[j].classList.remove('active-audition');
+      btns[j].classList.remove('playing');
     }
     var status = document.getElementById('tone-status-label');
     if (status) status.innerText = 'Idle / Ready';
@@ -3481,7 +4089,133 @@ footer a:hover {
     if (freqEl) freqEl.innerText = '-- Hz';
   };
 
-  // 1. Stereo Ping (Left, Center, Right)
+  // 1. Isolated Physical Left / Right Channel Sound
+  window.playIsolatedChannel = function(chIndex) {
+    stopActiveTone();
+    var actx = getLabAudioContext();
+    if (!actx) return;
+
+    var btn = document.getElementById(chIndex === 0 ? 'btn-play-left-ch' : 'btn-play-right-ch');
+    if (btn) btn.classList.add('playing');
+
+    var sampleRate = actx.sampleRate;
+    var durationSec = 1.35;
+    var length = Math.floor(sampleRate * durationSec);
+    var buffer = actx.createBuffer(2, length, sampleRate);
+    var leftData = buffer.getChannelData(0);
+    var rightData = buffer.getChannelData(1);
+
+    // Target channel gets chime bursts, non-target channel gets STRICT ZEROES
+    var activeData = chIndex === 0 ? leftData : rightData;
+    var silentData = chIndex === 0 ? rightData : leftData;
+    for (var k = 0; k < length; k++) {
+      silentData[k] = 0;
+    }
+
+    var f1 = chIndex === 0 ? 440 : 587;
+    var f2 = chIndex === 0 ? 880 : 1174;
+
+    for (var i = 0; i < length; i++) {
+      var t = i / sampleRate;
+      var burst = Math.sin(t * Math.PI * 3);
+      if (burst > 0) {
+        var env = Math.sin(burst * Math.PI * 0.5);
+        activeData[i] = (Math.sin(2 * Math.PI * f1 * t) * 0.6 + Math.sin(2 * Math.PI * f2 * t) * 0.4) * env * 0.3;
+      } else {
+        activeData[i] = 0;
+      }
+    }
+
+    var src = actx.createBufferSource();
+    src.buffer = buffer;
+    src.connect(actx.destination);
+    labActiveNodes.push(src);
+
+    var status = document.getElementById('tone-status-label');
+    var freqEl = document.getElementById('sweep-freq-val');
+    if (status) status.innerText = chIndex === 0 ? '◀ Playing Left Channel Chime (100% Left)' : '▶ Playing Right Channel Chime (100% Right)';
+    if (freqEl) freqEl.innerText = chIndex === 0 ? '440/880 Hz (Left)' : '587/1174 Hz (Right)';
+
+    src.onended = function() {
+      if (btn) btn.classList.remove('playing');
+      if (status) status.innerText = 'Chime completed. Select what you heard in each ear.';
+    };
+    src.start();
+  };
+
+  // Record user acoustic confirmation (prevents fake auto-pass!)
+  window.recordStereoResponse = function(channel, choice) {
+    if (channel === 'left') {
+      stereoTestState.leftChoice = choice;
+    } else {
+      stereoTestState.rightChoice = choice;
+    }
+
+    var group = document.getElementById(channel + '-choice-group');
+    if (group) {
+      var chips = group.querySelectorAll('.channel-choice-chip');
+      chips.forEach(function(c) {
+        c.className = 'channel-choice-chip';
+      });
+      var target = document.getElementById('choice-' + channel + '-' + choice);
+      if (target) {
+        if (choice === (channel === 'left' ? 'left' : 'right')) {
+          target.className = 'channel-choice-chip selected';
+        } else if (choice === 'both') {
+          target.className = 'channel-choice-chip selected-warn';
+        } else {
+          target.className = 'channel-choice-chip selected-danger';
+        }
+      }
+    }
+
+    updateStereoVerdictBanner();
+  };
+
+  window.updateStereoVerdictBanner = function() {
+    var banner = document.getElementById('stereo-status-banner');
+    var bannerText = document.getElementById('stereo-status-banner-text');
+    if (!banner || !bannerText) return;
+
+    var l = stereoTestState.leftChoice;
+    var r = stereoTestState.rightChoice;
+
+    if (!l && !r) {
+      banner.className = 'stereo-status-banner';
+      bannerText.innerHTML = '⚪ <strong>Stereo Separation Pending:</strong> Click <em>Play Left Channel</em> and <em>Play Right Channel</em> above, then confirm what you heard in each ear.';
+      return;
+    }
+
+    if (l === 'silent' || r === 'silent') {
+      banner.className = 'stereo-status-banner stereo-status-danger';
+      var silentSide = (l === 'silent' && r === 'silent') ? 'Both channels were inaudible' : (l === 'silent' ? 'Left channel was inaudible' : 'Right channel was inaudible');
+      bannerText.innerHTML = '⚠️ <strong>Single Earbud / Missing Audio Detected:</strong> ' + silentSide + '. One earbud is likely in the charging case, disconnected, or unseated.';
+      return;
+    }
+
+    if (l === 'both' || r === 'both') {
+      banner.className = 'stereo-status-banner stereo-status-warn';
+      bannerText.innerHTML = '⚠️ <strong>Mono Downmix Detected:</strong> Sound bled into both ears equally. Your OS, Android Mono Audio accessibility setting, or Bluetooth receiver is summing discrete stereo channels into mono.';
+      return;
+    }
+
+    if (l === 'right' || r === 'left') {
+      banner.className = 'stereo-status-banner stereo-status-warn';
+      bannerText.innerHTML = '⚠️ <strong>Inverted Channels Detected:</strong> Sound played in opposite ears. Your headphones or earbuds are reversed (Left in right ear / Right in left ear).';
+      return;
+    }
+
+    if (l === 'left' && r === 'right') {
+      banner.className = 'stereo-status-banner stereo-status-pass';
+      bannerText.innerHTML = '✓ <strong>True Stereo Verified:</strong> Discrete 2.0 Left and Right acoustic channel isolation confirmed with zero mono downmixing.';
+      return;
+    }
+
+    banner.className = 'stereo-status-banner';
+    bannerText.innerHTML = '⏳ <strong>Partially Verified:</strong> Now test the other channel above to complete the acoustic separation check.';
+  };
+
+  // Alternating Stereo Ping (Left, Center, Right)
   window.runStereoPingCheck = function() {
     stopActiveTone();
     var actx = getLabAudioContext();
@@ -3526,13 +4260,13 @@ footer a:hover {
     }
 
     // Ping Left (0s), Center (0.6s), Right (1.2s)
-    pingChannel(-1.0, '◀ Pinging Left Channel...', 0.0, 0.45);
-    pingChannel(0.0, '◆ Pinging Center (Both)...', 0.55, 0.45);
-    pingChannel(1.0, '▶ Pinging Right Channel...', 1.1, 0.45);
+    pingChannel(-1.0, '◀ Alternating Ping: Left Channel...', 0.0, 0.45);
+    pingChannel(0.0, '◆ Alternating Ping: Center...', 0.55, 0.45);
+    pingChannel(1.0, '▶ Alternating Ping: Right Channel...', 1.1, 0.45);
 
     setTimeout(function() {
-      if (status) status.innerText = '✓ Stereo Separation Verified';
-      if (freqEl) freqEl.innerText = 'Stereo OK';
+      if (status) status.innerText = 'Alternating ping completed. Use Left/Right cards above for physical verification.';
+      if (freqEl) freqEl.innerText = 'Ping Finished';
       if (btn) btn.classList.remove('active-audition');
     }, 1750);
   };
