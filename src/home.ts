@@ -3374,7 +3374,7 @@ footer a:hover {
       if (isAndroid) {
         if (pNameEl) pNameEl.innerText = 'Android Audio Architecture (AAudio / OpenSL ES)';
         if (pTagEl) pTagEl.innerText = 'Android ' + (touchPoints > 0 ? 'Touch Mobile' : '');
-        var adv = '<strong>Android Audio Subsystem:</strong> Android\'s system audio mixer resamples streams to 48 kHz by default. For bit-perfect 192 kHz FLAC playback, plug in an external USB-C DAC with an OTG cable and enable direct hardware pass-through in BitChord, Metrofuse, or USB Audio Player PRO.';
+        var adv = '<strong>Android Audio Subsystem:</strong> Android OS system audio mixer resamples streams to 48 kHz by default. For bit-perfect 192 kHz FLAC playback, plug in an external USB-C DAC with an OTG cable and enable direct hardware pass-through in BitChord, Metrofuse, or USB Audio Player PRO.';
         if (isBluetooth) {
           adv += '<br><span style="color:#fb7185;">⚠️ <strong>Bluetooth Route Flagged:</strong> Standard SBC/AAC wireless codecs compress audio to ~256kbps. Switch to wired 3.5mm/USB-C or enable LDAC (990kbps) in Android Developer Options.</span>';
         }
