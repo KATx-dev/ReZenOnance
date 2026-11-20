@@ -63,8 +63,8 @@ export class AddonDatabase {
   private localDevices: Map<string, Set<string>> = new Map();
   private localIps: Map<string, Set<string>> = new Map();
   private localProviders: Map<string, any> = new Map([
+    ['instable', { id: 'instable', name: 'Arcod Lossless Source', type: 'built-in', base_url: 'https://arcod.xyz', is_enabled: true, health_status: 'operational', created_at: new Date().toISOString() }],
     ['monochrome', { id: 'monochrome', name: 'Monochrome Lossless Core', type: 'built-in', base_url: 'https://tracks.monochrome.st', is_enabled: true, health_status: 'operational', created_at: new Date().toISOString() }],
-    ['instable', { id: 'instable', name: 'Arcod Lossless Source', type: 'built-in', base_url: 'https://arcod.xyz', is_enabled: false, health_status: 'offline', created_at: new Date().toISOString() }],
   ]);
 
   constructor(private readonly config: Config) {

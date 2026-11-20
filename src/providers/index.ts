@@ -15,8 +15,8 @@ export function createProvider(config: Config): RacingProvider | QobuzProvider {
   if (config.provider === 'qobuzdl') return new QobuzDlProvider(config);
   if (config.provider === 'multi') {
     return new RacingProvider([
+      { id: 'instable', name: 'Arcod Lossless Source', type: 'built-in', baseUrl: config.instableBaseUrl ?? 'https://arcod.xyz', provider: new InstableProvider(config), enabled: true },
       { id: 'monochrome', name: 'Monochrome Lossless Core', type: 'built-in', baseUrl: config.monochromeBaseUrl ?? 'https://tracks.monochrome.st', provider: new MonochromeProvider(config), enabled: true },
-      { id: 'instable', name: 'Arcod Lossless Source', type: 'built-in', baseUrl: config.instableBaseUrl ?? 'https://arcod.xyz', provider: new InstableProvider(config), enabled: false },
     ]);
   }
   if (config.provider === 'http') return new HttpQobuzProvider(config);

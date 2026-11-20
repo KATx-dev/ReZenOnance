@@ -1644,14 +1644,55 @@ body {
       currentAudio = null;
     }
 
-    var streamUrl = '/stream/' + encodeURIComponent(t.id) + '?quality=LOSSLESS';
-    var audio = new Audio(streamUrl);
-    currentAudio = audio;
-    audio.play().then(function() {
-      if (status) status.innerHTML = '▶ <strong>Playing:</strong> ' + (t.title || 'Track') + ' &middot; <span style="color:var(--peach);">24-Bit / 192 kHz FLAC Stream Active</span>';
-    }).catch(function(err) {
-      if (status) status.innerText = 'Playback notice: ' + err.message;
-    });
+    var streamApiUrl = '/stream/' + encodeURIComponent(t.id) + '?quality=LOSSLESS';
+    var proxyUrl = '/stream/' + encodeURIComponent(t.id) + '/audio?quality=LOSSLESS';
+
+    fetch(streamApiUrl)
+      .then(function(res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status + ' resolving stream');
+        return res.json();
+      })
+      .then(function(data) {
+        if (!data || !data.url) throw new Error('No playable stream URL returned');
+        
+        var audio = new Audio();
+        currentAudio = audio;
+
+        function tryPlay(sourceUrl, isFallback) {
+          audio.src = sourceUrl;
+          audio.load();
+          audio.play().then(function() {
+            if (status) {
+              var fmt = (data.format || 'FLAC').toUpperCase();
+              status.innerHTML = '▶ <strong>Playing:</strong> ' + (t.title || 'Track') +
+                (t.artist ? ' &middot; ' + t.artist : '') +
+                ' &middot; <span style="color:var(--peach);">24-Bit / 192 kHz ' + fmt + ' Stream Active</span>' +
+                (isFallback ? ' <span style="font-size:11px;color:var(--text-muted);">(Gateway Audio Proxy)</span>' : '');
+            }
+          }).catch(function(err) {
+            if (!isFallback) {
+              // Automatically retry via gateway audio proxy
+              tryPlay(proxyUrl, true);
+            } else {
+              if (status) status.innerText = 'Playback notice: ' + err.message;
+            }
+          });
+        }
+
+        tryPlay(data.url, false);
+      })
+      .catch(function(err) {
+        // If API metadata fetch failed, try direct proxy streaming
+        var audio = new Audio();
+        currentAudio = audio;
+        audio.src = proxyUrl;
+        audio.load();
+        audio.play().then(function() {
+          if (status) status.innerHTML = '▶ <strong>Playing:</strong> ' + (t.title || 'Track') + ' &middot; <span style="color:var(--peach);">Lossless Stream Active (Proxy)</span>';
+        }).catch(function(playErr) {
+          if (status) status.innerText = 'Playback notice: ' + (playErr.message || err.message);
+        });
+      });
   };
 
 })();
@@ -1715,7 +1756,7 @@ a{color:#9ecbff;}
   function esc(value){return String(value||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function request(url, done){var x=new XMLHttpRequest();x.onreadystatechange=function(){if(x.readyState===4){if(x.status>=200&&x.status<300){try{done(null,JSON.parse(x.responseText));}catch(e){done(e);}}else{done(new Error('Request failed'));}}};x.open('GET',url,true);x.send();}
   window.doSearch=function(){var q=el('query').value.replace(/^\\s+|\\s+$/g,'');if(!q){el('status').innerHTML='Enter something to search.';return false;}el('status').innerHTML='Searching...';el('results').innerHTML='';var quality=el('quality').value;request('/search?q='+encodeURIComponent(q)+'&quality='+encodeURIComponent(quality)+'&atmos=auto',function(err,data){if(err||!data){el('status').innerHTML='Search is unavailable right now.';return;}lastTracks=data.tracks||[];if(!lastTracks.length){el('status').innerHTML='No tracks found.';return;}el('status').innerHTML=lastTracks.length+' result'+(lastTracks.length===1?'':'s')+' found';var html='';for(var i=0;i<lastTracks.length;i++){var t=lastTracks[i];html+='<div class="card"><img class="cover" src="'+esc(t.artworkURL||'')+'" alt=""><div class="meta"><div class="title">'+esc(t.title)+'</div><div class="artist">'+esc(t.artist||t.album||'Unknown artist')+'</div><div class="tag">'+esc(t.audioQuality||t.format||quality)+'</div></div><button class="play" onclick="playTrack('+i+')">PLAY</button></div>';}el('results').innerHTML=html;});return false;};
-  window.playTrack=function(index){var t=lastTracks[index];if(!t){return;}el('nowPlaying').innerHTML='Loading: '+esc(t.title);var quality=el('quality').value;request('/stream/'+encodeURIComponent(t.id)+'?quality='+encodeURIComponent(quality)+'&atmos=auto',function(err,data){if(err||!data||!data.url){el('nowPlaying').innerHTML='This track is not available.';return;}el('nowPlaying').innerHTML='Playing: '+esc(t.title)+(t.artist?' — '+esc(t.artist):'');var audio=el('audio');audio.src=data.url;audio.load();audio.play();});};
+  window.playTrack=function(index){var t=lastTracks[index];if(!t){return;}el('nowPlaying').innerHTML='Loading: '+esc(t.title);var quality=el('quality').value;request('/stream/'+encodeURIComponent(t.id)+'?quality='+encodeURIComponent(quality)+'&atmos=auto',function(err,data){if(err||!data||!data.url){el('nowPlaying').innerHTML='This track is not available.';return;}el('nowPlaying').innerHTML='Playing: '+esc(t.title)+(t.artist?' — '+esc(t.artist):'');var audio=el('audio');audio.src=data.url;audio.load();var p=audio.play();if(p&&p.catch){p.catch(function(){audio.src='/stream/'+encodeURIComponent(t.id)+'/audio?quality='+encodeURIComponent(quality);audio.load();audio.play();});}});};
 })();
 </script>
 </body>

@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
+import { Readable } from 'node:stream';
 import Fastify from 'fastify';
 import fastifyCookie from '@fastify/cookie';
 import { loadConfig, type Config } from './config.js';
@@ -674,7 +675,34 @@ function registerAddon(prefix: string, provider: QobuzProvider, manifest: { id: 
     }
   });
 
-  app.get<{ Params: { id: string; userSlug?: string }; Querystring: { quality?: string; atmos?: string } }>(route('/stream/:id'), async (request, reply) => {
+  app.get<{ Params: { id: string; userSlug?: string }; Querystring: { quality?: string; atmos?: string; audio?: string } }>(route('/stream/:id'), async (request, reply) => {
+    totalStreamsServed++;
+    if (request.params.userSlug) {
+      const clientIp = (request.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || request.ip;
+      const userAgent = request.headers['user-agent'] || 'unknown';
+      const access = await db.recordStreamAccess(request.params.userSlug, clientIp, userAgent);
+      if (!access.allowed) {
+        return reply.code(429).send({ error: access.reason || 'Playback quota exceeded' });
+      }
+    }
+    const quality = parseQuality(request.query.quality);
+    const atmos = request.query.atmos ?? 'auto';
+    const id = request.params.id;
+    if (!/^qobuz_[A-Za-z0-9_-]{10,512}$/.test(id)) throw notFound('track not found');
+
+    if (request.query.audio === '1' || request.query.audio === 'true') {
+      const targetAudio = route(`/stream/${encodeURIComponent(id)}/audio?quality=${encodeURIComponent(quality)}&atmos=${encodeURIComponent(atmos)}`);
+      return reply.code(302).redirect(targetAudio);
+    }
+
+    const upstreamId = upstreamIdFromPublicId(id, config.idSecret);
+    if (!upstreamId) throw notFound('track not available');
+    const stream = await provider.getStream(upstreamId, quality, atmos);
+    if (!stream) throw notFound('track not available');
+    try { return reply.send(streamResponse(stream, quality)); } catch { throw notFound('track has no playable rendition'); }
+  });
+
+  app.get<{ Params: { id: string; userSlug?: string }; Querystring: { quality?: string; atmos?: string } }>(route('/stream/:id/audio'), async (request, reply) => {
     totalStreamsServed++;
     if (request.params.userSlug) {
       const clientIp = (request.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || request.ip;
@@ -691,8 +719,47 @@ function registerAddon(prefix: string, provider: QobuzProvider, manifest: { id: 
     const upstreamId = upstreamIdFromPublicId(id, config.idSecret);
     if (!upstreamId) throw notFound('track not available');
     const stream = await provider.getStream(upstreamId, quality, atmos);
-    if (!stream) throw notFound('track not available');
-    try { return reply.send(streamResponse(stream, quality)); } catch { throw notFound('track has no playable rendition'); }
+    if (!stream || !stream.url) throw notFound('track has no playable rendition');
+
+    const upstreamHeaders: Record<string, string> = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+      'Accept': '*/*',
+    };
+    if (stream.url.includes('monochrome.st')) {
+      upstreamHeaders['Referer'] = 'https://monochrome.st/';
+      upstreamHeaders['Origin'] = 'https://monochrome.st';
+    }
+    if (request.headers.range) {
+      upstreamHeaders['Range'] = request.headers.range;
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20000);
+      const upstreamRes = await fetch(stream.url, {
+        headers: upstreamHeaders,
+        signal: controller.signal,
+      }).finally(() => clearTimeout(timeout));
+
+      if (!upstreamRes.ok && upstreamRes.status !== 206) {
+        throw notFound(`upstream audio returned HTTP ${upstreamRes.status}`);
+      }
+
+      reply.code(upstreamRes.status);
+      const contentType = stream.format === 'flac' ? 'audio/flac' : (upstreamRes.headers.get('content-type') || 'audio/flac');
+      reply.header('Content-Type', contentType);
+      reply.header('Accept-Ranges', 'bytes');
+      reply.header('Access-Control-Allow-Origin', '*');
+      const contentRange = upstreamRes.headers.get('content-range');
+      if (contentRange) reply.header('Content-Range', contentRange);
+      const contentLength = upstreamRes.headers.get('content-length');
+      if (contentLength) reply.header('Content-Length', contentLength);
+
+      return reply.send(Readable.fromWeb(upstreamRes.body as any));
+    } catch (err: any) {
+      if (err instanceof AppError) throw err;
+      throw notFound(err.message || 'failed to stream audio');
+    }
   });
 }
 

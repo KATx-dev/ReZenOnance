@@ -16,8 +16,32 @@ export class MonochromeProvider implements QobuzProvider {
   async getStream(trackId: string, _quality: Quality, _atmos: string): Promise<QobuzStream | null> {
     const cleanId = trackId.includes(':') ? trackId.slice(trackId.lastIndexOf(':') + 1) : trackId;
     if (!/^[A-Za-z0-9_-]+$/.test(cleanId)) return null;
+    const streamUrl = new URL(`/track/${encodeURIComponent(cleanId)}`, this.baseUrl()).toString();
+
+    // Verify stream availability so we do not return 429 blocked dead URLs
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3500);
+      const probe = await fetch(streamUrl, {
+        method: 'HEAD',
+        headers: {
+          'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+          referer: 'https://monochrome.st/',
+          origin: 'https://monochrome.st',
+        },
+        signal: controller.signal,
+      }).finally(() => clearTimeout(timeout));
+
+      if (probe.status === 429 || probe.status >= 400) {
+        return null;
+      }
+    } catch {
+      // If probe timed out or failed, do not serve an unplayable stream
+      return null;
+    }
+
     return {
-      url: new URL(`/track/${encodeURIComponent(cleanId)}`, this.baseUrl()).toString(),
+      url: streamUrl,
       format: 'flac', quality: 'LOSSLESS', manifest: 'none', encrypted: false,
     };
   }
