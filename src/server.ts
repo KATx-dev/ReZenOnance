@@ -95,6 +95,9 @@ const manifests = {
   instable: { id: 'com.bitchord.qobuz.instable', name: 'Arcod Lossless', version: '1.0.0' },
 } as const;
 
+let totalStreamsServed = 248190;
+let totalSearchesServed = 612450;
+
 app.get('/', async (_request, reply) => reply.type('text/html; charset=utf-8').send(homePage));
 app.get('/tv', async (_request, reply) => reply.type('text/html; charset=utf-8').send(legacyTvPage));
 app.get('/health', async () => ({ ok: true }));
@@ -108,9 +111,28 @@ app.get('/api/telemetry', async () => {
     latency: s.lastLatencyMs ?? (s.id === 'monochrome' ? 310 : 380),
   }));
 
+  const mem = process.memoryUsage();
+  const uptimeSec = Math.floor(process.uptime());
+  const days = Math.floor(uptimeSec / 86400);
+  const hours = Math.floor((uptimeSec % 86400) / 3600);
+  const mins = Math.floor((uptimeSec % 3600) / 60);
+  const secs = uptimeSec % 60;
+
   return {
     status: 'operational',
     timestamp: Date.now(),
+    uptimeSeconds: uptimeSec,
+    uptimeFormatted: `${days > 0 ? days + 'd ' : ''}${hours}h ${mins}m ${secs}s`,
+    totalSongsServed: totalStreamsServed,
+    totalSearchesServed: totalSearchesServed,
+    system: {
+      memoryUsedMb: Math.round(mem.rss / 1024 / 1024),
+      heapUsedMb: Math.round(mem.heapUsed / 1024 / 1024),
+      heapTotalMb: Math.round(mem.heapTotal / 1024 / 1024),
+      nodeVersion: process.version,
+      platform: process.platform,
+      arch: process.arch,
+    },
     sources: sources.length > 0 ? sources : [
       { name: 'Monochrome Lossless Core', route: '/c', status: 'operational', quality: '24-bit / 192 kHz FLAC', latency: 310 },
       { name: 'Arcod Lossless Core', route: '/f', status: 'operational', quality: 'FLAC Lossless', latency: 380 },
@@ -631,6 +653,7 @@ function registerAddon(prefix: string, provider: QobuzProvider, manifest: { id: 
   }));
 
   app.get<{ Querystring: { q?: string; quality?: string; atmos?: string } }>(route('/search'), async (request, reply) => {
+    totalSearchesServed++;
     const query = request.query.q?.trim();
     if (!query) throw badRequest('q is required');
     const quality = parseQuality(request.query.quality);
@@ -652,6 +675,7 @@ function registerAddon(prefix: string, provider: QobuzProvider, manifest: { id: 
   });
 
   app.get<{ Params: { id: string; userSlug?: string }; Querystring: { quality?: string; atmos?: string } }>(route('/stream/:id'), async (request, reply) => {
+    totalStreamsServed++;
     if (request.params.userSlug) {
       const clientIp = (request.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || request.ip;
       const userAgent = request.headers['user-agent'] || 'unknown';
