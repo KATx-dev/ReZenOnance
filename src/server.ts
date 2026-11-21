@@ -18,7 +18,10 @@ import {
   verifyAdminPassword,
   benchmarkAndVerifyAddon,
   renderAdminHtml,
+  isGatewayFrozen,
+  setGatewayFreeze,
 } from './admin.js';
+import { communityCache } from './community-cache.js';
 import {
   type AuthSession,
   createAuthToken,
@@ -633,7 +636,46 @@ app.delete<{ Params: { id: string } }>(
   }
 );
 
+app.get('/api/community', async (_request, reply) => {
+  return reply.header('Cache-Control', 'public, max-age=10, s-maxage=30').send(communityCache.getStats());
+});
+
+app.post<{ Body?: { freeze?: boolean } }>(
+  '/api/admin/freeze',
+  async (request, reply) => {
+    if (!requireAdminAuth(request, reply)) return;
+    const freeze = request.body?.freeze === true;
+    setGatewayFreeze(freeze);
+    return reply.send({ ok: true, frozen: freeze });
+  }
+);
+
+app.post(
+  '/api/admin/cache/clear',
+  async (request, reply) => {
+    if (!requireAdminAuth(request, reply)) return;
+    communityCache.clear();
+    return reply.send({ ok: true, cleared: true });
+  }
+);
+
+// Register master racing manifest
 registerAddon('', racingEngine, manifests.root);
+
+// Register dedicated per-provider manifests
+registerAddon('/p/arcod', createSourceProvider(config, 'arcod'), {
+  id: 'com.bitchord.qobuz.arcod',
+  name: 'ReZenOnance Arcod Lossless Core',
+  version: '1.0.0',
+});
+registerAddon('/p/monochrome', createSourceProvider(config, 'monochrome'), {
+  id: 'com.bitchord.qobuz.monochrome',
+  name: 'ReZenOnance Monochrome Lossless Core',
+  version: '1.0.0',
+});
+registerAddon('/p/instable', createSourceProvider(config, 'instable'), manifests.instable);
+
+// Backward compatibility routes
 registerAddon('/u/:userSlug', racingEngine, manifests.root);
 registerAddon('/a', createSourceProvider(config, 'qobuzdl'), manifests.qobuzdl);
 registerAddon('/b', createSourceProvider(config, 'lastbabe'), manifests.lastbabe);
@@ -643,7 +685,6 @@ registerAddon('/e', createSourceProvider(config, 'eljohnzc'), manifests.eljohnzc
 registerAddon('/f', createSourceProvider(config, 'instable'), manifests.instable);
 
 function registerAddon(prefix: string, provider: QobuzProvider, manifest: { id: string; name: string; version: string }): void {
-  const searchCache = new TtlCache<PublicTrack[]>(config.cacheTtlMs);
   const route = (pathStr: string): string => `${prefix}${pathStr}` || '/';
 
   app.get(route('/manifest.json'), async (_request, reply) => reply.header('Cache-Control', 'public, max-age=3600, s-maxage=86400').send({
@@ -654,37 +695,38 @@ function registerAddon(prefix: string, provider: QobuzProvider, manifest: { id: 
   }));
 
   app.get<{ Querystring: { q?: string; quality?: string; atmos?: string } }>(route('/search'), async (request, reply) => {
+    if (isGatewayFrozen()) {
+      return reply.code(503).send({ error: 'ReZenOnance gateway is currently frozen for maintenance.' });
+    }
     totalSearchesServed++;
     const query = request.query.q?.trim();
     if (!query) throw badRequest('q is required');
     const quality = parseQuality(request.query.quality);
     const atmos = request.query.atmos ?? 'auto';
-    const key = `${query}\u0000${quality}\u0000${atmos}`;
-    const cached = searchCache.get(key);
-    if (cached) return reply.header('Cache-Control', 'public, max-age=30, s-maxage=300, stale-while-revalidate=600').send({ tracks: cached });
+    const key = `${prefix}\u0000${query}\u0000${quality}\u0000${atmos}`;
+
+    // Community Cache Hit
+    const cached = communityCache.getSearch(key);
+    if (cached) {
+      return reply.header('Cache-Control', 'public, max-age=30, s-maxage=300, stale-while-revalidate=600').send({ tracks: cached });
+    }
+
     try {
       const tracks = (await provider.search(query, quality, atmos)).flatMap(track => {
         try { return [normalizeTrack(track, config.idSecret)]; } catch { return []; }
       });
-      searchCache.set(key, tracks);
+      communityCache.setSearch(key, tracks);
       return reply.header('Cache-Control', 'public, max-age=30, s-maxage=300, stale-while-revalidate=600').send({ tracks });
     } catch (error) {
-      const stale = searchCache.getStale(key);
-      if (stale) return reply.header('Cache-Control', 'public, max-age=10, s-maxage=30, stale-while-revalidate=120').send({ tracks: stale, stale: true });
       throw error;
     }
   });
 
   app.get<{ Params: { id: string; userSlug?: string }; Querystring: { quality?: string; atmos?: string; audio?: string } }>(route('/stream/:id'), async (request, reply) => {
-    totalStreamsServed++;
-    if (request.params.userSlug) {
-      const clientIp = (request.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || request.ip;
-      const userAgent = request.headers['user-agent'] || 'unknown';
-      const access = await db.recordStreamAccess(request.params.userSlug, clientIp, userAgent);
-      if (!access.allowed) {
-        return reply.code(429).send({ error: access.reason || 'Playback quota exceeded' });
-      }
+    if (isGatewayFrozen()) {
+      return reply.code(503).send({ error: 'ReZenOnance gateway is currently frozen for maintenance.' });
     }
+    totalStreamsServed++;
     const quality = parseQuality(request.query.quality);
     const atmos = request.query.atmos ?? 'auto';
     const id = request.params.id;
@@ -695,23 +737,31 @@ function registerAddon(prefix: string, provider: QobuzProvider, manifest: { id: 
       return reply.code(302).redirect(targetAudio);
     }
 
+    // Community Cache Hit for stream URL
+    const cachedStream = communityCache.getStream(id);
+    if (cachedStream) {
+      return reply.header('Cache-Control', 'public, max-age=60, s-maxage=600').send(streamResponse(cachedStream, quality));
+    }
+
     const upstreamId = upstreamIdFromPublicId(id, config.idSecret);
     if (!upstreamId) throw notFound('track not available');
     const stream = await provider.getStream(upstreamId, quality, atmos);
     if (!stream) throw notFound('track not available');
-    try { return reply.send(streamResponse(stream, quality)); } catch { throw notFound('track has no playable rendition'); }
+
+    try {
+      const resp = streamResponse(stream, quality);
+      communityCache.setStream(id, stream);
+      return reply.header('Cache-Control', 'public, max-age=60, s-maxage=600').send(resp);
+    } catch {
+      throw notFound('track has no playable rendition');
+    }
   });
 
   app.get<{ Params: { id: string; userSlug?: string }; Querystring: { quality?: string; atmos?: string } }>(route('/stream/:id/audio'), async (request, reply) => {
-    totalStreamsServed++;
-    if (request.params.userSlug) {
-      const clientIp = (request.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || request.ip;
-      const userAgent = request.headers['user-agent'] || 'unknown';
-      const access = await db.recordStreamAccess(request.params.userSlug, clientIp, userAgent);
-      if (!access.allowed) {
-        return reply.code(429).send({ error: access.reason || 'Playback quota exceeded' });
-      }
+    if (isGatewayFrozen()) {
+      return reply.code(503).send({ error: 'ReZenOnance gateway is currently frozen for maintenance.' });
     }
+    totalStreamsServed++;
     const quality = parseQuality(request.query.quality);
     const atmos = request.query.atmos ?? 'auto';
     const id = request.params.id;

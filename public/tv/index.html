@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReZenOnance TV · Vewd &amp; Sony Bravia Edition</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #080612;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    padding: 24px;
+    font-size: 18px;
+    user-select: none;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #ff2a7a;
+    padding-bottom: 14px;
+    margin-bottom: 20px;
+  }
+  .title { font-size: 26px; font-weight: 800; color: #ff2a7a; }
+  .badge { font-size: 14px; background: rgba(5,255,161,0.2); border: 1px solid #05ffa1; color: #05ffa1; padding: 4px 10px; border-radius: 6px; }
+  
+  .search-row { display: flex; gap: 12px; margin-bottom: 20px; }
+  input, select, button {
+    font-size: 18px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid #443c68;
+    background: #15102a;
+    color: #fff;
+    outline: none;
+  }
+  input { flex: 1; }
+  button { font-weight: 800; cursor: pointer; background: #ff2a7a; border: none; }
+  
+  /* Focus highlight for TV D-Pad navigation */
+  input:focus, select:focus, button:focus, .nav-item:focus {
+    outline: 3px solid #00f0ff !important;
+    background: #241c44 !important;
+    transform: scale(1.02);
+  }
+
+  .main-split { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 20px; }
+  @media (max-width: 800px) { .main-split { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: #110d24;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 16px;
+    height: 480px;
+    display: flex;
+    flex-direction: column;
+  }
+  .panel-title { font-size: 18px; font-weight: 800; color: #00f0ff; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 6px; }
+  
+  .list-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+
+  .track-item {
+    background: #1a1438;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .track-item.playing { border-color: #05ffa1; background: rgba(5,255,161,0.12); }
+
+  .player-box {
+    margin-top: 20px;
+    background: #15102a;
+    border: 2px solid #ff2a7a;
+    border-radius: 14px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .now-playing { font-size: 20px; font-weight: 800; color: #ffd166; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .controls-row { display: flex; gap: 12px; align-items: center; }
+</style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="title">📼 ReZenOnance TV</div>
+    <div class="badge">● SONY BRAVIA &amp; VEWD SAFE</div>
+  </div>
+
+  <form class="search-row" onsubmit="return doSearch(event)">
+    <input type="text" id="query" class="nav-item" placeholder="Search track or artist (e.g. Daft Punk, Inertia, Pink Floyd)..." autocomplete="off">
+    <select id="quality" class="nav-item">
+      <option value="LOSSLESS">Lossless FLAC</option>
+      <option value="HIGH">High (320 kbps)</option>
+    </select>
+    <button type="submit" class="nav-item">SEARCH</button>
+  </form>
+
+  <div class="main-split">
+    <!-- Search Results Panel -->
+    <div class="panel">
+      <div class="panel-title">Search Results <span id="search-status" style="font-size:12px;color:#a69bb5;font-weight:normal;"></span></div>
+      <div class="list-container" id="results-list">
+        <div style="color:#6c5f7d;padding:12px;">Use TV Remote to type search and press ENTER.</div>
+      </div>
+    </div>
+
+    <!-- TV Play Queue Panel -->
+    <div class="panel">
+      <div class="panel-title">TV Play Queue <span style="font-size:12px;color:#05ffa1;font-weight:normal;">(Auto-Advances)</span></div>
+      <div class="list-container" id="queue-list">
+        <div style="color:#6c5f7d;padding:12px;">Queue is empty. Click "+ Queue" on search results.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Big TV Player Bar -->
+  <div class="player-box">
+    <div class="now-playing" id="nowPlaying">Nothing playing</div>
+    <div class="controls-row">
+      <button class="nav-item" onclick="skipPrev()">⏮ PREV</button>
+      <button class="nav-item" id="play-pause-btn" onclick="togglePlay()">⏸ PAUSE</button>
+      <button class="nav-item" onclick="skipNext()">⏭ NEXT</button>
+      <audio id="audio" controls preload="none" style="flex:1;"></audio>
+    </div>
+  </div>
+
+<script>
+(function() {
+  var lastTracks = [];
+  var queue = [];
+  var currentIndex = -1;
+  var audio = document.getElementById('audio');
+
+  function el(id) { return document.getElementById(id); }
+  function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  window.doSearch = function(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    var q = el('query').value.replace(/^\s+|\s+$/g, '');
+    if (!q) return false;
+    el('search-status').innerText = 'Searching...';
+    el('results-list').innerHTML = '';
+
+    var quality = el('quality').value;
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/search?q=' + encodeURIComponent(q) + '&quality=' + encodeURIComponent(quality), true);
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4) {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            var data = JSON.parse(xhr.responseText);
+            lastTracks = data.tracks || [];
+            if (!lastTracks.length) {
+              el('search-status').innerText = 'No tracks found.';
+              return;
+            }
+            el('search-status').innerText = '(' + lastTracks.length + ' found)';
+            var html = '';
+            for (var i = 0; i < lastTracks.length; i++) {
+              var t = lastTracks[i];
+              html += '<div class="track-item">' +
+                '<div style="min-width:0;flex:1;">' +
+                  '<div style="font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(t.title) + '</div>' +
+                  '<div style="font-size:13px;color:#a69bb5;">' + esc(t.artist || 'Unknown') + '</div>' +
+                '</div>' +
+                '<div style="display:flex;gap:8px;">' +
+                  '<button class="nav-item" style="padding:6px 12px;font-size:14px;" onclick="playSearchTrack(' + i + ')">▶ Play</button>' +
+                  '<button class="nav-item" style="padding:6px 12px;font-size:14px;background:#443c68;" onclick="addToQueue(' + i + ')">+ Queue</button>' +
+                '</div>' +
+              '</div>';
+            }
+            el('results-list').innerHTML = html;
+          } catch(err) {
+            el('search-status').innerText = 'Parse error.';
+          }
+        } else {
+          el('search-status').innerText = 'Error searching.';
+        }
+      }
+    };
+    xhr.send();
+    return false;
+  };
+
+  window.playSearchTrack = function(index) {
+    var t = lastTracks[index];
+    if (!t) return;
+    queue.push(t);
+    renderQueue();
+    playQueueIndex(queue.length - 1);
+  };
+
+  window.addToQueue = function(index) {
+    var t = lastTracks[index];
+    if (!t) return;
+    queue.push(t);
+    renderQueue();
+  };
+
+  function renderQueue() {
+    if (!queue.length) {
+      el('queue-list').innerHTML = '<div style="color:#6c5f7d;padding:12px;">Queue is empty.</div>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < queue.length; i++) {
+      var item = queue[i];
+      var isCur = (i === currentIndex);
+      html += '<div class="track-item ' + (isCur ? 'playing' : '') + '">' +
+        '<div style="min-width:0;flex:1;">' +
+          '<div style="font-weight:700;color:#fff;">' + esc(item.title) + '</div>' +
+          '<div style="font-size:12px;color:#a69bb5;">' + esc(item.artist || '') + '</div>' +
+        '</div>' +
+        '<button class="nav-item" style="padding:4px 10px;font-size:12px;' + (isCur ? 'background:#05ffa1;color:#000;' : '') + '" onclick="playQueueIndex(' + i + ')">' +
+          (isCur ? 'PLAYING' : 'PLAY') +
+        '</button>' +
+      '</div>';
+    }
+    el('queue-list').innerHTML = html;
+  }
+
+  window.playQueueIndex = function(idx) {
+    if (idx < 0 || idx >= queue.length) return;
+    currentIndex = idx;
+    var t = queue[idx];
+    el('nowPlaying').innerText = 'Loading: ' + t.title;
+
+    var quality = el('quality').value;
+    var directUrl = '/stream/' + encodeURIComponent(t.id) + '?quality=' + encodeURIComponent(quality);
+    var proxyUrl = '/stream/' + encodeURIComponent(t.id) + '/audio?quality=' + encodeURIComponent(quality);
+
+    // Fetch JSON first, fallback directly to proxy
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', directUrl, true);
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4) {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            var data = JSON.parse(xhr.responseText);
+            loadStream(data.url, proxyUrl, t);
+          } catch(e) {
+            loadStream(proxyUrl, null, t);
+          }
+        } else {
+          loadStream(proxyUrl, null, t);
+        }
+      }
+    };
+    xhr.send();
+  };
+
+  function loadStream(url, fallback, t) {
+    audio.src = url;
+    audio.load();
+    el('nowPlaying').innerText = 'Playing: ' + t.title + (t.artist ? ' — ' + t.artist : '');
+    var p = audio.play();
+    if (p && p.catch) {
+      p.catch(function() {
+        if (fallback) {
+          loadStream(fallback, null, t);
+        } else {
+          el('nowPlaying').innerText = 'Playback failed for this track.';
+        }
+      });
+    }
+    renderQueue();
+  }
+
+  window.togglePlay = function() {
+    if (audio.paused) {
+      audio.play();
+      el('play-pause-btn').innerText = '⏸ PAUSE';
+    } else {
+      audio.pause();
+      el('play-pause-btn').innerText = '▶ PLAY';
+    }
+  };
+
+  window.skipNext = function() {
+    if (currentIndex + 1 < queue.length) playQueueIndex(currentIndex + 1);
+  };
+
+  window.skipPrev = function() {
+    if (currentIndex > 0) playQueueIndex(currentIndex - 1);
+  };
+
+  audio.addEventListener('ended', function() {
+    window.skipNext();
+  });
+
+  // Basic TV Remote D-Pad Navigation support
+  window.addEventListener('keydown', function(e) {
+    var code = e.keyCode;
+    // Enter key (13), Left (37), Up (38), Right (39), Down (40)
+    var items = document.querySelectorAll('.nav-item');
+    if (!items.length) return;
+    var current = document.activeElement;
+    var idx = Array.prototype.indexOf.call(items, current);
+
+    if (code === 40) { // Down
+      if (idx < items.length - 1) items[idx + 1].focus();
+      else items[0].focus();
+      e.preventDefault();
+    } else if (code === 38) { // Up
+      if (idx > 0) items[idx - 1].focus();
+      else items[items.length - 1].focus();
+      e.preventDefault();
+    }
+  });
+
+})();
+</script>
+</body>
+</html>

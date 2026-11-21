@@ -18,8 +18,8 @@ test('GET / returns modern web portal', async () => {
   assert.equal(res.statusCode, 200);
   assert.match(res.headers['content-type'] ?? '', /text\/html/);
   assert.match(res.payload, /ReZenOnance/);
-  assert.match(res.payload, /addon-url/);
-  assert.match(res.payload, /generateNewLink/);
+  assert.match(res.payload, /copyMasterLink/);
+  assert.match(res.payload, /Universal Link/);
 });
 
 test('GET /tv returns lightweight legacy TV page', async () => {

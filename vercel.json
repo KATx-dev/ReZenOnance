@@ -4,6 +4,9 @@
     { "src": "api/index.ts", "use": "@vercel/node" }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "/api/index.ts" }
+    { "src": "/tv(/.*)?", "dest": "/public/tv/index.html" },
+    { "src": "/assets/(.*)", "dest": "/public/assets/$1" },
+    { "src": "/(manifest\\.json|search.*|stream/.*|p/.*|u/.*|api/.*|admin.*)", "dest": "/api/index.ts" },
+    { "src": "/(.*)", "dest": "/public/index.html" }
   ]
 }

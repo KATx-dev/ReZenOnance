@@ -32,6 +32,10 @@ export function verifyAdminPassword(candidate: string | undefined, config: Confi
   }
 }
 
+let gatewayFrozen = false;
+export function isGatewayFrozen(): boolean { return gatewayFrozen; }
+export function setGatewayFreeze(freeze: boolean): void { gatewayFrozen = freeze; }
+
 export interface BenchmarkResult {
   ok: boolean;
   id?: string;

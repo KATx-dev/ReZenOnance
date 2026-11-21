@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ReZenOnance Nightly · 80s Pop Studio Lossless Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+
+  <!-- Top Retro Nav -->
+  <header class="top-nav">
+    <div class="nav-brand" onclick="switchView('station')">
+      <div class="tape-icon-badge">📼</div>
+      <div class="brand-text">ReZen<span>Onance</span> <span style="font-size:11px;color:var(--neon-pink);font-family:'JetBrains Mono';">NIGHTLY</span></div>
+    </div>
+
+    <div class="nav-badge-row">
+      <div class="status-badge-pop">
+        <span class="pulse-dot"></span>
+        <span>24-BIT LOSSLESS READY</span>
+      </div>
+
+      <a href="/tv" class="nav-action-btn" title="Optimized for Vewd & Sony Bravia TVs">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="15" x="2" y="3" rx="2"/><polyline points="17 21 12 17 7 21"/></svg>
+        <span>TV Mode</span>
+      </a>
+
+      <a href="/admin" class="nav-action-btn" style="border-color:var(--border-neon);">
+        <span>Control Center</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Viewport -->
+  <main class="app-container">
+
+    <!-- ============================================== -->
+    <!-- 1. VIEW: STATION (Home & Universal Link Hub)   -->
+    <!-- ============================================== -->
+    <div class="app-view active" id="view-station">
+      <section class="hero-layout">
+        <div class="hero-text-box">
+          <div class="hero-tag">⚡ ZERO COMPRESSION · BIT-PERFECT STUDIO SOUND</div>
+          <h1 class="hero-headline">
+            Studio Lossless.<br>
+            <span class="gradient-pop">Pure Analog Soul.</span>
+          </h1>
+          <p class="hero-sub">
+            The next-generation audio gateway for <strong>BitChord, Mochy, and Metrofuse</strong>. True 24-bit / 192 kHz FLAC streaming powered by parallel multi-provider racing and community caching.
+          </p>
+          <div class="hero-btn-row">
+            <button class="btn-neon-pink" onclick="copyMasterLink()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              <span id="copy-master-btn-text">Copy Universal Link</span>
+            </button>
+            <button class="btn-neon-cyan" onclick="switchView('studio')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>Launch Web Studio &amp; EQ</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cassette Tape Hero Widget -->
+        <div class="cassette-box">
+          <div class="tape-label-card">
+            <div class="tape-label-top">
+              <span>TYPE II · HIGH POSITION</span>
+              <span style="color:var(--neon-gold);">9,216 KBPS FLAC</span>
+            </div>
+
+            <div class="tape-window">
+              <div class="spool"></div>
+              <div class="tape-center-strip">
+                <div class="lcd-counter" id="lcd-time-counter">00:00</div>
+                <div style="font-size:10px;font-family:'JetBrains Mono';color:var(--text-dim);margin-top:2px;" id="player-status-badge">READY TO ROLL</div>
+              </div>
+              <div class="spool"></div>
+            </div>
+
+            <div class="tape-track-info">
+              <div class="tape-track-title" id="tape-display-title">Hit Search &amp; Play Any Track</div>
+              <div class="tape-track-artist" id="tape-display-artist">ReZenOnance Studio Master Audio Engine</div>
+            </div>
+          </div>
+
+          <!-- Stereo Analog VU Meters -->
+          <div class="vu-meter-box">
+            <div class="vu-channel">
+              <span class="vu-label">L</span>
+              <div class="vu-track-bar"><div class="vu-fill" id="vu-bar-l"></div></div>
+            </div>
+            <div class="vu-channel">
+              <span class="vu-label">R</span>
+              <div class="vu-track-bar"><div class="vu-fill" id="vu-bar-r"></div></div>
+            </div>
+          </div>
+
+          <!-- Quick Controls -->
+          <div style="display:flex;justify-content:center;gap:10px;margin-top:16px;">
+            <button class="chip-action" onclick="window.player.prev()" title="Previous Track">⏪ PREV</button>
+            <button class="chip-action" id="master-play-btn" onclick="window.player.togglePlay()" style="background:var(--neon-pink);border-color:var(--neon-pink);color:#fff;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>PLAY</span>
+            </button>
+            <button class="chip-action" onclick="window.player.next()" title="Next Track">⏩ NEXT</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Universal Link Hub Card -->
+      <section class="manifest-hub-card">
+        <div class="hub-header">
+          <div class="hub-title-group">
+            <h2>Universal Addon Endpoint</h2>
+            <p>Single master link for all users with unlimited streaming headroom. Auto-races top lossless cores.</p>
+          </div>
+          <span style="font-size:11px;padding:3px 10px;border-radius:9999px;background:rgba(5,255,161,0.15);color:var(--neon-mint);font-weight:800;border:1px solid var(--neon-mint);">
+            ● UNLIMITED ACCESS
+          </span>
+        </div>
+
+        <div class="link-input-row">
+          <input type="text" class="neon-input" id="master-link-input" readonly value="">
+          <button class="btn-neon-pink" onclick="copyMasterLink()">
+            <span>Copy Link</span>
+          </button>
+        </div>
+
+        <div class="quick-action-row">
+          <button class="chip-action" onclick="openQrModal()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/></svg>
+            <span>Scan QR Code</span>
+          </button>
+          <a href="bitchord://install-addon?url=" id="bitchord-install-link" class="chip-action">
+            <span>⚡ BitChord 1-Click Install</span>
+          </a>
+          <button class="chip-action" onclick="switchView('providers')">
+            <span>⚡ View Single-Provider Links</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Search Section -->
+      <section style="margin-top:36px;">
+        <h2 style="font-size:22px;color:#fff;margin-bottom:12px;">Audition &amp; Stream Lossless Tracks</h2>
+        <form onsubmit="return window.handleSearch(event)" style="display:flex;gap:12px;margin-bottom:14px;">
+          <input type="text" class="neon-input" id="search-query-field" placeholder="Search song, artist, or album (e.g. Inertia AJR, Daft Punk, Hotel California)..." autocomplete="off">
+          <button type="submit" class="btn-neon-pink">
+            <span>Search</span>
+          </button>
+        </form>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px;">
+          <span style="font-size:12px;color:var(--text-dim);font-weight:700;">Trending:</span>
+          <button class="chip-action" onclick="window.quickSearch('Inertia AJR')">AJR - Inertia</button>
+          <button class="chip-action" onclick="window.quickSearch('Daft Punk Get Lucky')">Daft Punk - Get Lucky</button>
+          <button class="chip-action" onclick="window.quickSearch('Pink Floyd Time')">Pink Floyd - Time</button>
+          <button class="chip-action" onclick="window.quickSearch('The Weeknd Blinding Lights')">The Weeknd</button>
+        </div>
+
+        <div id="search-feedback-text" style="font-size:13px;color:var(--text-muted);margin-bottom:14px;"></div>
+        <div id="search-results-list" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(310px, 1fr));gap:12px;"></div>
+      </section>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- 2. VIEW: PROVIDERS (Dedicated Single-Source)   -->
+    <!-- ============================================== -->
+    <div class="app-view" id="view-providers">
+      <div style="margin-bottom:24px;">
+        <h2 style="font-size:28px;color:#fff;margin-bottom:6px;">Dedicated Provider Endpoints</h2>
+        <p style="font-size:14px;color:var(--text-muted);">
+          Prefer direct single-source connection without multi-backend racing? Grab any dedicated addon link below:
+        </p>
+      </div>
+
+      <div class="providers-grid">
+        <!-- Arcod Card -->
+        <div class="provider-card">
+          <div class="provider-top">
+            <div class="provider-title">Arcod Lossless Core</div>
+            <div class="provider-badge">● 24-BIT HIGH-SPEED</div>
+          </div>
+          <div class="provider-desc">
+            Direct high-speed studio master bitstream straight from Qobuz audio backend. Flawless 24-bit / 192 kHz FLAC streaming with zero buffering.
+          </div>
+          <div class="provider-url-box" id="url-box-arcod">https://qobuz-addon.vercel.app/p/arcod/manifest.json</div>
+          <button class="btn-neon-pink" id="btn-copy-arcod" onclick="window.copyProviderLink('arcod', 'btn-copy-arcod')">
+            <span>Copy Addon Link</span>
+          </button>
+        </div>
+
+        <!-- Monochrome Card -->
+        <div class="provider-card">
+          <div class="provider-top">
+            <div class="provider-title">Monochrome Lossless Core</div>
+            <div class="provider-badge" style="color:var(--neon-gold);border-color:var(--neon-gold);background:rgba(255,209,102,0.15);">● BACKUP CORE</div>
+          </div>
+          <div class="provider-desc">
+            Independent community lossless streaming core with automated 429 rate limit failover protection.
+          </div>
+          <div class="provider-url-box" id="url-box-mono">https://qobuz-addon.vercel.app/p/monochrome/manifest.json</div>
+          <button class="btn-neon-cyan" id="btn-copy-mono" onclick="window.copyProviderLink('monochrome', 'btn-copy-mono')">
+            <span>Copy Addon Link</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- 3. VIEW: JUKEBOX (Community Caching Pulse)      -->
+    <!-- ============================================== -->
+    <div class="app-view" id="view-jukebox">
+      <div style="margin-bottom:24px;">
+        <h2 style="font-size:28px;color:#fff;margin-bottom:6px;">Community Jukebox &amp; Cache Pulse</h2>
+        <p style="font-size:14px;color:var(--text-muted);">
+          Every time you listen, stream links &amp; metadata are cached globally. The next listener gets sub-25ms start times!
+        </p>
+      </div>
+
+      <!-- Telemetry Metric Tiles -->
+      <div class="jukebox-stats-row">
+        <div class="stat-tile">
+          <div class="stat-label">🎵 Community Cached Songs</div>
+          <div class="stat-metric" id="stat-cached-streams">0</div>
+          <div class="stat-sub">Active studio master streams in memory</div>
+        </div>
+
+        <div class="stat-tile">
+          <div class="stat-label">⚡ Global Cache Hits</div>
+          <div class="stat-metric" id="stat-cache-hits">0</div>
+          <div class="stat-sub">Instant zero-latency responses</div>
+        </div>
+
+        <div class="stat-tile">
+          <div class="stat-label">💾 Bandwidth Saved</div>
+          <div class="stat-metric" id="stat-mb-saved">0 MB</div>
+          <div class="stat-sub">Upstream scrape load prevented</div>
+        </div>
+
+        <div class="stat-tile">
+          <div class="stat-label">🎯 Cache Hit Ratio</div>
+          <div class="stat-metric" id="stat-hit-ratio">100%</div>
+          <div class="stat-sub">Edge cache efficiency</div>
+        </div>
+      </div>
+
+      <!-- Cached Songs Table -->
+      <div class="community-songs-card">
+        <h3 style="font-size:18px;color:#fff;margin-bottom:4px;">Popular Community Cached Tracks</h3>
+        <p style="font-size:12px;color:var(--text-muted);">These tracks stream instantaneously without touching upstream scrapers:</p>
+        <table class="song-cache-table">
+          <thead>
+            <tr>
+              <th style="width:50px;">Rank</th>
+              <th>Track Title</th>
+              <th>Artist</th>
+              <th>Community Activity</th>
+            </tr>
+          </thead>
+          <tbody id="top-songs-table-body">
+            <tr>
+              <td colspan="4" style="text-align:center;color:var(--text-dim);padding:18px;">Listening warms the cache. Start playing music!</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- 4. VIEW: STUDIO (Web Player & 10-Band AutoEQ)   -->
+    <!-- ============================================== -->
+    <div class="app-view" id="view-studio">
+      <div style="margin-bottom:24px;">
+        <h2 style="font-size:28px;color:#fff;margin-bottom:6px;">Audiophile Studio &amp; DSP Equalizer</h2>
+        <p style="font-size:14px;color:var(--text-muted);">
+          Web Audio API 10-band peaking equalizer with AutoEQ acoustic targets and live canvas visualizer.
+        </p>
+      </div>
+
+      <div class="player-studio-layout">
+        <!-- Equalizer Rack Panel -->
+        <div class="studio-panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <div style="font-size:16px;font-weight:800;color:#fff;">10-Band Graphic Equalizer</div>
+            <button class="chip-action" onclick="window.player.applyPreset('flat')" style="font-size:11px;padding:4px 10px;">RESET (0 dB)</button>
+          </div>
+
+          <!-- Real-Time Visualizer Canvas -->
+          <canvas class="visualizer-canvas" id="audio-visualizer-canvas" width="480" height="120"></canvas>
+
+          <!-- 10 Sliders Container -->
+          <div class="eq-rack" id="eq-rack-container"></div>
+
+          <!-- AutoEQ Presets -->
+          <div style="font-size:12px;font-weight:800;color:var(--neon-cyan);margin-top:14px;">AutoEQ &amp; Target Profiles:</div>
+          <div class="autoeq-chips-row">
+            <button class="autoeq-chip active" data-preset="flat" onclick="window.player.applyPreset('flat')">Flat Reference</button>
+            <button class="autoeq-chip" data-preset="harman" onclick="window.player.applyPreset('harman')">Harman Target 2019</button>
+            <button class="autoeq-chip" data-preset="80s_warmth" onclick="window.player.applyPreset('80s_warmth')">80s Analog Warmth</button>
+            <button class="autoeq-chip" data-preset="hires_air" onclick="window.player.applyPreset('hires_air')">Hi-Res Air Shimmer</button>
+            <button class="autoeq-chip" data-preset="bass_boom" onclick="window.player.applyPreset('bass_boom')">Bass Master</button>
+            <button class="autoeq-chip" data-preset="vocal" onclick="window.player.applyPreset('vocal')">Vocal Pop Forward</button>
+          </div>
+        </div>
+
+        <!-- Play Queue & Now Playing Panel -->
+        <div class="studio-panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <div style="font-size:16px;font-weight:800;color:#fff;">Active Play Queue</div>
+            <div style="font-size:11px;color:var(--neon-gold);font-weight:800;">AUTO-ADVANCE ENABLED</div>
+          </div>
+          <div class="queue-list" id="studio-queue-list">
+            <div style="font-size:12px;color:var(--text-dim);padding:12px;">Queue is empty. Search for songs to add!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ============================================== -->
+  <!-- BOTTOM FLOATING PILL DOCK NAVIGATION           -->
+  <!-- ============================================== -->
+  <div class="bottom-dock-fixed">
+    <nav class="bottom-pill-dock" aria-label="Bottom Navigation">
+      <button class="dock-item-btn active" id="dock-btn-station" onclick="switchView('station')">
+        <span>📻</span>
+        <span>Station</span>
+      </button>
+
+      <button class="dock-item-btn" id="dock-btn-providers" onclick="switchView('providers')">
+        <span>⚡</span>
+        <span>Providers</span>
+      </button>
+
+      <button class="dock-item-btn" id="dock-btn-jukebox" onclick="switchView('jukebox')">
+        <span>🕹️</span>
+        <span>Jukebox</span>
+      </button>
+
+      <button class="dock-item-btn" id="dock-btn-studio" onclick="switchView('studio')">
+        <span>🎧</span>
+        <span>Studio EQ</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- QR Code Modal -->
+  <div class="modal-overlay" id="qr-modal" onclick="if(event.target===this)closeQrModal()">
+    <div class="modal-content" style="text-align:center;">
+      <button class="modal-close" onclick="closeQrModal()">✕</button>
+      <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:6px;">Scan Addon QR Code</div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:18px;">
+        Scan with your phone or Android TV to immediately open BitChord with this link.
+      </p>
+      <div id="qr-code-target" style="display:inline-block;margin-bottom:14px;"></div>
+      <div id="qr-url-text" style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--neon-cyan);word-break:break-all;"></div>
+    </div>
+  </div>
+
+  <script src="/assets/player.js"></script>
+  <script src="/assets/app.js"></script>
+</body>
+</html>
