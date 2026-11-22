@@ -171,8 +171,9 @@
 
     updatePlayerUi(t, 'Resolving bit-perfect FLAC stream...');
 
-    var directApi = '/stream/' + encodeURIComponent(t.id) + '?quality=LOSSLESS';
-    var proxyApi = '/stream/' + encodeURIComponent(t.id) + '/audio?quality=LOSSLESS';
+    var metaParams = (t.title ? '&title=' + encodeURIComponent(t.title) : '') + (t.artist ? '&artist=' + encodeURIComponent(t.artist) : '');
+    var directApi = '/stream/' + encodeURIComponent(t.id) + '?quality=LOSSLESS' + metaParams;
+    var proxyApi = '/stream/' + encodeURIComponent(t.id) + '/audio?quality=LOSSLESS' + metaParams;
 
     fetch(directApi)
       .then(function(res) {

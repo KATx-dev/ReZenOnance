@@ -47,6 +47,27 @@ test('GET /assets/* returns static assets with correct MIME types and cache head
   assert.match(appRes.payload, /switchView/);
 });
 
+test('Community cache retains track title and artist in telemetry and top cached tracks', async () => {
+  const { communityCache } = await import('../src/community-cache.js');
+  communityCache.setMetadata('test-track-123', 'Solaris Night', 'Synth Wave Master');
+  communityCache.setStream('test-track-123', {
+    url: 'https://example.com/audio.flac',
+    format: 'flac',
+    quality: 'LOSSLESS',
+    encrypted: false,
+    manifest: 'none',
+  });
+
+  const res = await app.inject({ method: 'GET', url: '/api/community' });
+  assert.equal(res.statusCode, 200);
+  const data = JSON.parse(res.payload);
+  assert.ok(Array.isArray(data.topCachedTracks));
+  const track = data.topCachedTracks.find((t: any) => t.id === 'test-track-123');
+  assert.ok(track, 'Track must be present in top cached tracks');
+  assert.equal(track.title, 'Solaris Night');
+  assert.equal(track.artist, 'Synth Wave Master');
+});
+
 test('GET /api/telemetry returns telemetry data', async () => {
   const res = await app.inject({ method: 'GET', url: '/api/telemetry' });
   assert.equal(res.statusCode, 200);

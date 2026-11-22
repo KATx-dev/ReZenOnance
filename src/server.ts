@@ -733,7 +733,7 @@ function registerAddon(prefix: string, provider: QobuzProvider, manifest: { id: 
     }
   });
 
-  app.get<{ Params: { id: string; userSlug?: string }; Querystring: { quality?: string; atmos?: string; audio?: string } }>(route('/stream/:id'), async (request, reply) => {
+  app.get<{ Params: { id: string; userSlug?: string }; Querystring: { quality?: string; atmos?: string; audio?: string; title?: string; artist?: string } }>(route('/stream/:id'), async (request, reply) => {
     if (isGatewayFrozen()) {
       return reply.code(503).send({ error: 'ReZenOnance gateway is currently frozen for maintenance.' });
     }
@@ -743,8 +743,16 @@ function registerAddon(prefix: string, provider: QobuzProvider, manifest: { id: 
     const id = request.params.id;
     if (!/^qobuz_[A-Za-z0-9_-]{10,512}$/.test(id)) throw notFound('track not found');
 
+    const title = request.query.title?.trim();
+    const artist = request.query.artist?.trim();
+    if (title) {
+      communityCache.setMetadata(id, title, artist);
+    }
+
     if (request.query.audio === '1' || request.query.audio === 'true') {
-      const targetAudio = route(`/stream/${encodeURIComponent(id)}/audio?quality=${encodeURIComponent(quality)}&atmos=${encodeURIComponent(atmos)}`);
+      const titleArg = title ? `&title=${encodeURIComponent(title)}` : '';
+      const artistArg = artist ? `&artist=${encodeURIComponent(artist)}` : '';
+      const targetAudio = route(`/stream/${encodeURIComponent(id)}/audio?quality=${encodeURIComponent(quality)}&atmos=${encodeURIComponent(atmos)}${titleArg}${artistArg}`);
       return reply.code(302).redirect(targetAudio);
     }
 
@@ -761,14 +769,14 @@ function registerAddon(prefix: string, provider: QobuzProvider, manifest: { id: 
 
     try {
       const resp = streamResponse(stream, quality);
-      communityCache.setStream(id, stream);
+      communityCache.setStream(id, stream, title, artist);
       return reply.header('Cache-Control', 'public, max-age=60, s-maxage=600').send(resp);
     } catch {
       throw notFound('track has no playable rendition');
     }
   });
 
-  app.get<{ Params: { id: string; userSlug?: string }; Querystring: { quality?: string; atmos?: string } }>(route('/stream/:id/audio'), async (request, reply) => {
+  app.get<{ Params: { id: string; userSlug?: string }; Querystring: { quality?: string; atmos?: string; title?: string; artist?: string } }>(route('/stream/:id/audio'), async (request, reply) => {
     if (isGatewayFrozen()) {
       return reply.code(503).send({ error: 'ReZenOnance gateway is currently frozen for maintenance.' });
     }
@@ -777,6 +785,13 @@ function registerAddon(prefix: string, provider: QobuzProvider, manifest: { id: 
     const atmos = request.query.atmos ?? 'auto';
     const id = request.params.id;
     if (!/^qobuz_[A-Za-z0-9_-]{10,512}$/.test(id)) throw notFound('track not found');
+
+    const title = request.query.title?.trim();
+    const artist = request.query.artist?.trim();
+    if (title) {
+      communityCache.setMetadata(id, title, artist);
+    }
+
     const upstreamId = upstreamIdFromPublicId(id, config.idSecret);
     if (!upstreamId) throw notFound('track not available');
     const stream = await provider.getStream(upstreamId, quality, atmos);

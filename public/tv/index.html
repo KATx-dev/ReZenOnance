@@ -234,8 +234,9 @@
     el('nowPlaying').innerText = 'Loading: ' + t.title;
 
     var quality = el('quality').value;
-    var directUrl = '/stream/' + encodeURIComponent(t.id) + '?quality=' + encodeURIComponent(quality);
-    var proxyUrl = '/stream/' + encodeURIComponent(t.id) + '/audio?quality=' + encodeURIComponent(quality);
+    var metaParams = (t.title ? '&title=' + encodeURIComponent(t.title) : '') + (t.artist ? '&artist=' + encodeURIComponent(t.artist) : '');
+    var directUrl = '/stream/' + encodeURIComponent(t.id) + '?quality=' + encodeURIComponent(quality) + metaParams;
+    var proxyUrl = '/stream/' + encodeURIComponent(t.id) + '/audio?quality=' + encodeURIComponent(quality) + metaParams;
 
     // Fetch JSON first, fallback directly to proxy
     var xhr = new XMLHttpRequest();

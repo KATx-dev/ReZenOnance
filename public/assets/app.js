@@ -124,20 +124,36 @@
           }
           var html = '';
           data.topCachedTracks.forEach(function(song, i) {
-            html += '<tr>' +
+            var displayTitle = (song.title && song.title !== 'Unknown Track') ? song.title : 'Lossless Track #' + (i + 1);
+            var displayArtist = (song.artist && song.artist !== 'Unknown Artist') ? song.artist : 'Qobuz Studio Master';
+            html += '<tr style="cursor:pointer;" onclick="playCachedSong(' + i + ')" title="Click to listen in Studio">' +
               '<td style="font-family:\'JetBrains Mono\';color:var(--neon-pink);font-weight:800;">#' + (i + 1) + '</td>' +
-              '<td style="font-weight:700;color:#fff;">' + (song.title || 'Unknown Track') + '</td>' +
-              '<td style="color:var(--text-muted);">' + (song.artist || 'Unknown Artist') + '</td>' +
+              '<td style="font-weight:700;color:#fff;">' + displayTitle + '</td>' +
+              '<td style="color:var(--text-muted);">' + displayArtist + '</td>' +
               '<td style="font-family:\'JetBrains Mono\';color:var(--neon-mint);font-weight:800;">⚡ ' + song.hits + ' hits</td>' +
             '</tr>';
           });
           tableBody.innerHTML = html;
+          window._cachedTopSongs = data.topCachedTracks;
         }
       })
       .catch(function(err) {
         console.warn('Community telemetry error:', err);
       });
   }
+
+  window.playCachedSong = function(index) {
+    if (!window._cachedTopSongs || !window._cachedTopSongs[index]) return;
+    var item = window._cachedTopSongs[index];
+    if (window.ReZenPlayer) {
+      window.ReZenPlayer.enqueue({
+        id: item.id,
+        title: (item.title && item.title !== 'Unknown Track') ? item.title : 'Lossless Track #' + (index + 1),
+        artist: (item.artist && item.artist !== 'Unknown Artist') ? item.artist : 'Qobuz Studio Master'
+      }, true);
+      switchView('studio');
+    }
+  };
 
   // --- Search Engine ---
   var currentSearchResults = [];
