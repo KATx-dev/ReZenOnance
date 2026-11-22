@@ -1,3 +1,4 @@
+process.env.NODE_ENV ??= 'test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { run } from 'node:test';

@@ -6,6 +6,7 @@ import Fastify from 'fastify';
 import fastifyCookie from '@fastify/cookie';
 import { loadConfig, type Config } from './config.js';
 import { homePage, legacyTvPage } from './home.js';
+import { getAsset } from './static-assets.js';
 import { TtlCache } from './cache.js';
 import { AppError, badRequest, notFound } from './errors.js';
 import { normalizeTrack, streamResponse, upstreamIdFromPublicId } from './normalize.js';
@@ -104,6 +105,16 @@ let totalSearchesServed = 612450;
 
 app.get('/', async (_request, reply) => reply.type('text/html; charset=utf-8').send(homePage));
 app.get('/tv', async (_request, reply) => reply.type('text/html; charset=utf-8').send(legacyTvPage));
+app.get<{ Params: { filename: string } }>('/assets/:filename', async (request, reply) => {
+  const asset = getAsset(request.params.filename);
+  if (!asset) return reply.code(404).send('Asset not found');
+  return reply.type(asset.contentType).header('Cache-Control', 'public, max-age=86400, s-maxage=86400').send(asset.content);
+});
+app.get<{ Params: { '*': string } }>('/assets/*', async (request, reply) => {
+  const asset = getAsset(request.params['*']);
+  if (!asset) return reply.code(404).send('Asset not found');
+  return reply.type(asset.contentType).header('Cache-Control', 'public, max-age=86400, s-maxage=86400').send(asset.content);
+});
 app.get('/health', async () => ({ ok: true }));
 
 app.get('/api/telemetry', async () => {

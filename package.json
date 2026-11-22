@@ -9,8 +9,9 @@
     "node": ">=20"
   },
   "scripts": {
+    "prebuild": "node scripts/build-assets.js",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "dev": "tsx watch src/server.ts",
     "test": "node --import tsx test/runner.js"
   },

@@ -30,6 +30,23 @@ test('GET /tv returns lightweight legacy TV page', async () => {
   assert.match(res.payload, /doSearch/);
 });
 
+test('GET /assets/* returns static assets with correct MIME types and cache headers', async () => {
+  const cssRes = await app.inject({ method: 'GET', url: '/assets/style.css' });
+  assert.equal(cssRes.statusCode, 200);
+  assert.match(cssRes.headers['content-type'] ?? '', /text\/css/);
+  assert.match(cssRes.payload, /neon-pink/);
+
+  const jsRes = await app.inject({ method: 'GET', url: '/assets/player.js' });
+  assert.equal(jsRes.statusCode, 200);
+  assert.match(jsRes.headers['content-type'] ?? '', /javascript/);
+  assert.match(jsRes.payload, /AudioContext/);
+
+  const appRes = await app.inject({ method: 'GET', url: '/assets/app.js' });
+  assert.equal(appRes.statusCode, 200);
+  assert.match(appRes.headers['content-type'] ?? '', /javascript/);
+  assert.match(appRes.payload, /switchView/);
+});
+
 test('GET /api/telemetry returns telemetry data', async () => {
   const res = await app.inject({ method: 'GET', url: '/api/telemetry' });
   assert.equal(res.statusCode, 200);

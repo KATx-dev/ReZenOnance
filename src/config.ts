@@ -1,3 +1,5 @@
+import { randomBytes } from 'node:crypto';
+
 export interface Config {
   host: string;
   port: number;
@@ -55,9 +57,9 @@ export function loadConfig(): Config {
     deezerBaseUrl: process.env.DEEZER_BASE_URL ?? 'https://dzr.tabs-vs-spaces.wtf',
     eljohnzcBaseUrl: process.env.ELJOHNZC_BASE_URL ?? 'https://eljohnzc-addon.de.deplexo.com/59efe06a96',
     instableBaseUrl: process.env.INSTABLE_BASE_URL ?? 'https://arcod.xyz',
-    adminPassword: process.env.ADMIN_PASSWORD ?? 'ReZen#QuantumFLAC-2026!Vault',
-    supabaseUrl: process.env.SUPABASE_URL ?? 'https://dtqqvjcpsyolfvudtonv.supabase.co',
-    supabaseKey: process.env.SUPABASE_KEY ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0cXF2amNwc3lvbGZ2dWR0b252Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjE1MjMsImV4cCI6MjA4ODUzNzUyM30.MHb8G9ESsEyifBGbQv4jH5mpOS5bkm3c6nkzvmXvk9s',
+    adminPassword: process.env.ADMIN_PASSWORD || (process.env.NODE_ENV === 'test' ? 'test-admin-secret-vault-123' : (process.env._RANDOM_ADMIN_PW ??= randomBytes(24).toString('hex'))),
+    supabaseUrl: process.env.SUPABASE_URL || (process.env.NODE_ENV === 'test' ? 'https://test-project.supabase.co' : ''),
+    supabaseKey: process.env.SUPABASE_KEY || (process.env.NODE_ENV === 'test' ? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.test' : ''),
     googleClientId: process.env.GOOGLE_CLIENT_ID,
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
     discordClientId: process.env.DISCORD_CLIENT_ID,
