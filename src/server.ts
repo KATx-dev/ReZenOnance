@@ -6,7 +6,7 @@ import Fastify from 'fastify';
 import fastifyCookie from '@fastify/cookie';
 import { loadConfig, type Config } from './config.js';
 import { homePage, legacyTvPage } from './home.js';
-import { getAsset } from './static-assets.js';
+import { getAsset, getPlayerPage, getPlayerAsset } from './static-assets.js';
 import { TtlCache } from './cache.js';
 import { AppError, badRequest, notFound } from './errors.js';
 import { normalizeTrack, streamResponse, upstreamIdFromPublicId } from './normalize.js';
@@ -22,7 +22,12 @@ import {
   isGatewayFrozen,
   setGatewayFreeze,
 } from './admin.js';
-import { communityCache } from './community-cache.js';
+import {
+  communityCache,
+  buildCanonicalKey,
+  bareCanonicalKey,
+  resolveProviderSlug,
+} from './community-cache.js';
 import {
   type AuthSession,
   createAuthToken,
@@ -40,6 +45,7 @@ import { AddonDatabase } from './db.js';
 import type { QobuzProvider, Quality, PublicTrack } from './types.js';
 
 const config = loadConfig();
+communityCache.configure(config);
 const app = Fastify({ logger: { redact: ['req.headers.authorization', 'req.headers.cookie', '*.url'] } });
 const db = new AddonDatabase(config);
 const racingEngine = createProvider(config);
@@ -105,6 +111,18 @@ let totalSearchesServed = 612450;
 
 app.get('/', async (_request, reply) => reply.type('text/html; charset=utf-8').send(homePage));
 app.get('/tv', async (_request, reply) => reply.type('text/html; charset=utf-8').send(legacyTvPage));
+app.get('/player', async (_request, reply) => reply.type('text/html; charset=utf-8').send(getPlayerPage()));
+app.get('/player/', async (_request, reply) => reply.type('text/html; charset=utf-8').send(getPlayerPage()));
+app.get<{ Params: { filename: string } }>('/player/assets/:filename', async (request, reply) => {
+  const asset = getPlayerAsset(request.params.filename);
+  if (!asset) return reply.code(404).send('Player asset not found');
+  return reply.type(asset.contentType).header('Cache-Control', 'public, max-age=86400, s-maxage=86400').send(asset.content);
+});
+app.get<{ Params: { '*': string } }>('/player/assets/*', async (request, reply) => {
+  const asset = getPlayerAsset(request.params['*']);
+  if (!asset) return reply.code(404).send('Player asset not found');
+  return reply.type(asset.contentType).header('Cache-Control', 'public, max-age=86400, s-maxage=86400').send(asset.content);
+});
 app.get<{ Params: { filename: string } }>('/assets/:filename', async (request, reply) => {
   const asset = getAsset(request.params.filename);
   if (!asset) return reply.code(404).send('Asset not found');
@@ -519,7 +537,7 @@ app.get('/api/admin/overview', async (request, reply) => {
   const { total } = await db.getAllUserAddons({ limit: 1 });
   const sources = 'getSources' in (racingEngine as any) ? (racingEngine as RacingProvider).getSources() : [];
   const activeProviders = sources.filter(s => s.enabled !== false).length;
-  return reply.send({ ok: true, totalAddons: total, activeProviders, providersCount: sources.length });
+  return reply.send({ ok: true, totalAddons: total, activeProviders, providersCount: sources.length, frozen: isGatewayFrozen() });
 });
 
 app.get<{ Querystring: { search?: string; filter?: 'all' | 'active' | 'revoked'; limit?: string; offset?: string } }>(
@@ -648,7 +666,8 @@ app.delete<{ Params: { id: string } }>(
 );
 
 app.get('/api/community', async (_request, reply) => {
-  return reply.header('Cache-Control', 'public, max-age=10, s-maxage=30').send(communityCache.getStats());
+  const stats = await communityCache.getStatsAsync();
+  return reply.header('Cache-Control', 'no-store, max-age=0').send(stats);
 });
 
 app.post<{ Body?: { freeze?: boolean } }>(
@@ -695,8 +714,16 @@ registerAddon('/d', createSourceProvider(config, 'deezer'), manifests.deezer);
 registerAddon('/e', createSourceProvider(config, 'eljohnzc'), manifests.eljohnzc);
 registerAddon('/f', createSourceProvider(config, 'instable'), manifests.instable);
 
+function normalizeSearchScope(prefix: string): string {
+  if (prefix === '/u/:userSlug' || prefix === '') return 'racing';
+  if (prefix === '/p/arcod' || prefix === '/p/instable' || prefix === '/f') return 'arcod';
+  if (prefix === '/p/monochrome' || prefix === '/c') return 'monochrome';
+  return prefix;
+}
+
 function registerAddon(prefix: string, provider: QobuzProvider, manifest: { id: string; name: string; version: string }): void {
   const route = (pathStr: string): string => `${prefix}${pathStr}` || '/';
+  const searchScope = normalizeSearchScope(prefix);
 
   app.get(route('/manifest.json'), async (_request, reply) => reply.header('Cache-Control', 'public, max-age=3600, s-maxage=86400').send({
     ...manifest, resources: ['search', 'stream'], allowDownloads: 0,
@@ -714,26 +741,32 @@ function registerAddon(prefix: string, provider: QobuzProvider, manifest: { id: 
     if (!query) throw badRequest('q is required');
     const quality = parseQuality(request.query.quality);
     const atmos = request.query.atmos ?? 'auto';
-    const key = `${prefix}\u0000${query}\u0000${quality}\u0000${atmos}`;
+    const key = `${searchScope}\u0000${query.toLowerCase()}\u0000${quality}\u0000${atmos}`;
 
-    // Community Cache Hit
-    const cached = communityCache.getSearch(key);
-    if (cached) {
-      return reply.header('Cache-Control', 'public, max-age=30, s-maxage=300, stale-while-revalidate=600').send({ tracks: cached });
+    // Multi-tier Community Cache Hit (L1 RAM + L2 Persistent)
+    const cached = await communityCache.getSearchAsync(key);
+    if (cached && cached.length > 0) {
+      return reply.header('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400').send({ tracks: cached });
     }
 
     try {
       const tracks = (await provider.search(query, quality, atmos)).flatMap(track => {
         try { return [normalizeTrack(track, config.idSecret)]; } catch { return []; }
       });
-      communityCache.setSearch(key, tracks);
-      return reply.header('Cache-Control', 'public, max-age=30, s-maxage=300, stale-while-revalidate=600').send({ tracks });
+      await communityCache.setSearchAsync(key, tracks, (t) => {
+        const up = upstreamIdFromPublicId(t.id, config.idSecret);
+        return up ? bareCanonicalKey(up, prefix) : undefined;
+      });
+      return reply.header('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400').send({ tracks });
     } catch (error) {
       throw error;
     }
   });
 
-  app.get<{ Params: { id: string; userSlug?: string }; Querystring: { quality?: string; atmos?: string; audio?: string; title?: string; artist?: string } }>(route('/stream/:id'), async (request, reply) => {
+  app.get<{
+    Params: { id: string; userSlug?: string };
+    Querystring: { quality?: string; atmos?: string; audio?: string; title?: string; artist?: string; album?: string; artwork?: string; duration?: string };
+  }>(route('/stream/:id'), async (request, reply) => {
     if (isGatewayFrozen()) {
       return reply.code(503).send({ error: 'ReZenOnance gateway is currently frozen for maintenance.' });
     }
@@ -743,40 +776,66 @@ function registerAddon(prefix: string, provider: QobuzProvider, manifest: { id: 
     const id = request.params.id;
     if (!/^qobuz_[A-Za-z0-9_-]{10,512}$/.test(id)) throw notFound('track not found');
 
+    const upstreamId = upstreamIdFromPublicId(id, config.idSecret);
+    if (!upstreamId) throw notFound('track not available');
+
+    const canonicalKey = buildCanonicalKey(upstreamId, prefix, quality);
+    const bareKey = bareCanonicalKey(upstreamId, prefix);
+    const providerSlug = resolveProviderSlug(upstreamId, prefix);
+
     const title = request.query.title?.trim();
     const artist = request.query.artist?.trim();
+    const album = request.query.album?.trim();
+    const artworkURL = request.query.artwork?.trim();
+    const durationNum = request.query.duration ? Number(request.query.duration) : undefined;
+    const duration = Number.isFinite(durationNum) && (durationNum as number) > 0 ? durationNum : undefined;
+
     if (title) {
-      communityCache.setMetadata(id, title, artist);
+      communityCache.setMetadata(id, title, artist, { album, artworkURL, duration, provider: providerSlug, canonicalBareKey: bareKey });
     }
 
     if (request.query.audio === '1' || request.query.audio === 'true') {
       const titleArg = title ? `&title=${encodeURIComponent(title)}` : '';
       const artistArg = artist ? `&artist=${encodeURIComponent(artist)}` : '';
-      const targetAudio = route(`/stream/${encodeURIComponent(id)}/audio?quality=${encodeURIComponent(quality)}&atmos=${encodeURIComponent(atmos)}${titleArg}${artistArg}`);
+      const albumArg = album ? `&album=${encodeURIComponent(album)}` : '';
+      const targetAudio = route(`/stream/${encodeURIComponent(id)}/audio?quality=${encodeURIComponent(quality)}&atmos=${encodeURIComponent(atmos)}${titleArg}${artistArg}${albumArg}`);
       return reply.code(302).redirect(targetAudio);
     }
 
-    // Community Cache Hit for stream URL
-    const cachedStream = communityCache.getStream(id);
-    if (cachedStream) {
-      return reply.header('Cache-Control', 'public, max-age=60, s-maxage=600').send(streamResponse(cachedStream, quality));
+    // Community Cache Hit (L1 + L2 Persistent across master + split links)
+    const cachedEntry = await communityCache.getStreamAsync(id, canonicalKey);
+    if (cachedEntry) {
+      communityCache.recordCachedPlay(cachedEntry, prefix || '/', 'json');
+      await communityCache.persistEntryAsync(cachedEntry, prefix || '/', 'json', true);
+      return reply.header('Cache-Control', 'public, max-age=120, s-maxage=3600').send(streamResponse(cachedEntry.stream, quality));
     }
 
-    const upstreamId = upstreamIdFromPublicId(id, config.idSecret);
-    if (!upstreamId) throw notFound('track not available');
     const stream = await provider.getStream(upstreamId, quality, atmos);
     if (!stream) throw notFound('track not available');
 
     try {
       const resp = streamResponse(stream, quality);
-      communityCache.setStream(id, stream, title, artist);
-      return reply.header('Cache-Control', 'public, max-age=60, s-maxage=600').send(resp);
+      const saved = communityCache.setStream(id, stream, title, artist, {
+        canonicalKey,
+        provider: providerSlug,
+        quality,
+        album,
+        artworkURL,
+        duration,
+        routePrefix: prefix || '/',
+        deliveryMode: 'json',
+      });
+      await communityCache.persistEntryAsync(saved, prefix || '/', 'json', false);
+      return reply.header('Cache-Control', 'public, max-age=120, s-maxage=3600').send(resp);
     } catch {
       throw notFound('track has no playable rendition');
     }
   });
 
-  app.get<{ Params: { id: string; userSlug?: string }; Querystring: { quality?: string; atmos?: string; title?: string; artist?: string } }>(route('/stream/:id/audio'), async (request, reply) => {
+  app.get<{
+    Params: { id: string; userSlug?: string };
+    Querystring: { quality?: string; atmos?: string; title?: string; artist?: string; album?: string; artwork?: string; duration?: string };
+  }>(route('/stream/:id/audio'), async (request, reply) => {
     if (isGatewayFrozen()) {
       return reply.code(503).send({ error: 'ReZenOnance gateway is currently frozen for maintenance.' });
     }
@@ -786,36 +845,94 @@ function registerAddon(prefix: string, provider: QobuzProvider, manifest: { id: 
     const id = request.params.id;
     if (!/^qobuz_[A-Za-z0-9_-]{10,512}$/.test(id)) throw notFound('track not found');
 
-    const title = request.query.title?.trim();
-    const artist = request.query.artist?.trim();
-    if (title) {
-      communityCache.setMetadata(id, title, artist);
-    }
-
     const upstreamId = upstreamIdFromPublicId(id, config.idSecret);
     if (!upstreamId) throw notFound('track not available');
-    const stream = await provider.getStream(upstreamId, quality, atmos);
-    if (!stream || !stream.url) throw notFound('track has no playable rendition');
 
-    const upstreamHeaders: Record<string, string> = {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
-      'Accept': '*/*',
-    };
-    if (stream.url.includes('monochrome.st')) {
-      upstreamHeaders['Referer'] = 'https://monochrome.st/';
-      upstreamHeaders['Origin'] = 'https://monochrome.st';
-    }
-    if (request.headers.range) {
-      upstreamHeaders['Range'] = request.headers.range;
+    const canonicalKey = buildCanonicalKey(upstreamId, prefix, quality);
+    const bareKey = bareCanonicalKey(upstreamId, prefix);
+    const providerSlug = resolveProviderSlug(upstreamId, prefix);
+
+    const title = request.query.title?.trim();
+    const artist = request.query.artist?.trim();
+    const album = request.query.album?.trim();
+    const artworkURL = request.query.artwork?.trim();
+    const durationNum = request.query.duration ? Number(request.query.duration) : undefined;
+    const duration = Number.isFinite(durationNum) && (durationNum as number) > 0 ? durationNum : undefined;
+
+    if (title) {
+      communityCache.setMetadata(id, title, artist, { album, artworkURL, duration, provider: providerSlug, canonicalBareKey: bareKey });
     }
 
-    try {
+    let usedCache = false;
+    let cachedEntry = await communityCache.getStreamAsync(id, canonicalKey);
+    let stream = cachedEntry?.stream ?? null;
+
+    if (cachedEntry && stream) {
+      usedCache = true;
+      communityCache.recordCachedPlay(cachedEntry, prefix || '/', 'audio-proxy');
+      await communityCache.persistEntryAsync(cachedEntry, prefix || '/', 'audio-proxy', true);
+    } else {
+      stream = await provider.getStream(upstreamId, quality, atmos);
+      if (!stream || !stream.url) throw notFound('track has no playable rendition');
+      const saved = communityCache.setStream(id, stream, title, artist, {
+        canonicalKey,
+        provider: providerSlug,
+        quality,
+        album,
+        artworkURL,
+        duration,
+        routePrefix: prefix || '/',
+        deliveryMode: 'audio-proxy',
+      });
+      await communityCache.persistEntryAsync(saved, prefix || '/', 'audio-proxy', false);
+    }
+
+    const fetchAudioUpstream = async (targetUrl: string) => {
+      const upstreamHeaders: Record<string, string> = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+        'Accept': '*/*',
+      };
+      if (targetUrl.includes('monochrome.st')) {
+        upstreamHeaders['Referer'] = 'https://monochrome.st/';
+        upstreamHeaders['Origin'] = 'https://monochrome.st';
+      } else if (targetUrl.includes('arcod.xyz')) {
+        upstreamHeaders['Referer'] = 'https://arcod.xyz/';
+        upstreamHeaders['Origin'] = 'https://arcod.xyz';
+      }
+      if (request.headers.range) {
+        upstreamHeaders['Range'] = request.headers.range;
+      }
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 20000);
-      const upstreamRes = await fetch(stream.url, {
+      return fetch(targetUrl, {
         headers: upstreamHeaders,
         signal: controller.signal,
       }).finally(() => clearTimeout(timeout));
+    };
+
+    try {
+      let upstreamRes = await fetchAudioUpstream(stream.url);
+
+      // If cached URL expired upstream (e.g., 401/403/410/502), auto-refresh once seamlessly
+      if (!upstreamRes.ok && upstreamRes.status !== 206 && usedCache) {
+        communityCache.invalidateStream(id, canonicalKey);
+        const refreshed = await provider.getStream(upstreamId, quality, atmos);
+        if (refreshed && refreshed.url) {
+          stream = refreshed;
+          const saved = communityCache.setStream(id, stream, title, artist, {
+            canonicalKey,
+            provider: providerSlug,
+            quality,
+            album,
+            artworkURL,
+            duration,
+            routePrefix: prefix || '/',
+            deliveryMode: 'audio-proxy',
+          });
+          await communityCache.persistEntryAsync(saved, prefix || '/', 'audio-proxy', false);
+          upstreamRes = await fetchAudioUpstream(stream.url);
+        }
+      }
 
       if (!upstreamRes.ok && upstreamRes.status !== 206) {
         throw notFound(`upstream audio returned HTTP ${upstreamRes.status}`);

@@ -375,7 +375,28 @@ export function renderAdminHtml(): string {
       </div>
       <div class="stat-card">
         <div class="stat-label">Racing Engine State</div>
-        <div class="stat-value" style="color:var(--emerald);">OPERATIONAL</div>
+        <div class="stat-value" id="stat-engine-state" style="color:var(--emerald);">OPERATIONAL</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Community Cache (30d)</div>
+        <div class="stat-value" id="stat-cache-summary" style="font-size:22px;">-</div>
+        <div id="stat-cache-backend" style="font-size:11px; color:var(--text-muted); margin-top:4px;">Loading backend...</div>
+      </div>
+    </div>
+
+    <!-- Gateway & Cache Controls -->
+    <div class="panel" style="margin-bottom:24px;">
+      <div class="panel-header" style="margin-bottom:0;">
+        <div>
+          <div class="panel-title">Gateway &amp; Community Cache Controls</div>
+          <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">
+            Emergency maintenance freeze across Master &amp; Split endpoints, or flush L1/disk community stream cache.
+          </p>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-secondary" id="btn-toggle-freeze" onclick="toggleGatewayFreeze()">Freeze Gateway</button>
+          <button class="btn btn-danger" onclick="clearCommunityCache()">Clear Community Cache</button>
+        </div>
       </div>
     </div>
 
@@ -558,7 +579,9 @@ export function renderAdminHtml(): string {
         if (data.ok) {
           document.getElementById('stat-total-addons').innerText = (data.totalAddons || 0).toLocaleString();
           document.getElementById('stat-active-providers').innerText = (data.activeProviders || 0) + ' Upstreams';
+          applyFreezeUi(data.frozen === true);
         }
+        loadCacheStats();
         return true;
       } catch (err) {
         return false;
@@ -605,6 +628,74 @@ export function renderAdminHtml(): string {
       document.getElementById('auth-screen').style.display = 'flex';
     }
 
+    var gatewayIsFrozen = false;
+
+    function applyFreezeUi(frozen) {
+      gatewayIsFrozen = frozen === true;
+      var stateEl = document.getElementById('stat-engine-state');
+      var btn = document.getElementById('btn-toggle-freeze');
+      if (stateEl) {
+        stateEl.innerText = gatewayIsFrozen ? 'FROZEN' : 'OPERATIONAL';
+        stateEl.style.color = gatewayIsFrozen ? 'var(--rose)' : 'var(--emerald)';
+      }
+      if (btn) {
+        btn.innerText = gatewayIsFrozen ? 'Unfreeze Gateway' : 'Freeze Gateway';
+        btn.className = gatewayIsFrozen ? 'btn btn-success' : 'btn btn-secondary';
+      }
+    }
+
+    async function loadCacheStats() {
+      try {
+        var res = await fetch('/api/community', { cache: 'no-store' });
+        if (!res.ok) return;
+        var c = await res.json();
+        var sumEl = document.getElementById('stat-cache-summary');
+        var backEl = document.getElementById('stat-cache-backend');
+        if (sumEl) {
+          sumEl.innerText = (c.cachedStreamsCount || 0) + ' tracks · ' + (c.totalHits || 0) + ' hits';
+        }
+        if (backEl) {
+          var totalAttempts = (c.totalHits || 0) + (c.totalMisses || 0);
+          var ratio = totalAttempts > 0 ? Math.round(((c.totalHits || 0) / totalAttempts) * 100) : 0;
+          backEl.innerText = 'Backend: ' + (c.persistenceBackend || 'disk+memory') + ' (' + ratio + '% ratio)';
+        }
+      } catch {}
+    }
+
+    async function toggleGatewayFreeze() {
+      try {
+        var res = await fetch('/api/admin/freeze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ freeze: !gatewayIsFrozen })
+        });
+        var data = await res.json();
+        if (res.ok && data.ok) {
+          applyFreezeUi(data.frozen === true);
+          showToast(data.frozen ? 'Gateway frozen for maintenance' : 'Gateway resumed');
+        } else {
+          showToast(data.error || 'Failed to toggle freeze', true);
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message, true);
+      }
+    }
+
+    async function clearCommunityCache() {
+      try {
+        var res = await fetch('/api/admin/cache/clear', { method: 'POST' });
+        var data = await res.json();
+        if (res.ok && data.ok) {
+          showToast('Community cache cleared');
+          loadCacheStats();
+        } else {
+          showToast(data.error || 'Failed to clear cache', true);
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message, true);
+      }
+    }
+
     async function loadOverview() {
       try {
         var res = await fetch('/api/admin/overview');
@@ -612,8 +703,10 @@ export function renderAdminHtml(): string {
           var data = await res.json();
           document.getElementById('stat-total-addons').innerText = (data.totalAddons || 0).toLocaleString();
           document.getElementById('stat-active-providers').innerText = (data.activeProviders || 0) + ' Upstreams';
+          applyFreezeUi(data.frozen === true);
         }
       } catch {}
+      loadCacheStats();
     }
 
     async function loadProviders() {

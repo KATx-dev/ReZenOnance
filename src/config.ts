@@ -20,6 +20,10 @@ export interface Config {
   adminPassword: string;
   supabaseUrl: string;
   supabaseKey: string;
+  supabaseServiceKey?: string;
+  redisRestUrl?: string;
+  redisRestToken?: string;
+  cacheFilePath?: string;
   googleClientId?: string;
   googleClientSecret?: string;
   discordClientId?: string;
@@ -60,6 +64,10 @@ export function loadConfig(): Config {
     adminPassword: process.env.ADMIN_PASSWORD || (process.env.NODE_ENV === 'test' ? 'test-admin-secret-vault-123' : (process.env._RANDOM_ADMIN_PW ??= randomBytes(24).toString('hex'))),
     supabaseUrl: process.env.SUPABASE_URL || (process.env.NODE_ENV === 'test' ? 'https://test-project.supabase.co' : ''),
     supabaseKey: process.env.SUPABASE_KEY || (process.env.NODE_ENV === 'test' ? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.test' : ''),
+    supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || undefined,
+    redisRestUrl: process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || undefined,
+    redisRestToken: process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || undefined,
+    cacheFilePath: process.env.REZEN_CACHE_FILE || undefined,
     googleClientId: process.env.GOOGLE_CLIENT_ID,
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
     discordClientId: process.env.DISCORD_CLIENT_ID,

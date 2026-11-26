@@ -20,6 +20,29 @@ test('GET / returns modern web portal', async () => {
   assert.match(res.payload, /ReZenOnance/);
   assert.match(res.payload, /copyMasterLink/);
   assert.match(res.payload, /Universal Link/);
+  assert.match(res.payload, /\/player/);
+  assert.match(res.payload, /\/p\/arcod\/manifest\.json/);
+  assert.match(res.payload, /\/p\/monochrome\/manifest\.json/);
+});
+
+test('GET /player and /player/assets/* serve compiled Waveform player bundle', async () => {
+  const htmlRes = await app.inject({ method: 'GET', url: '/player' });
+  assert.equal(htmlRes.statusCode, 200);
+  assert.match(htmlRes.headers['content-type'] ?? '', /text\/html/);
+  assert.match(htmlRes.payload, /ReZenOnance/);
+
+  const jsMatch = htmlRes.payload.match(/\/player\/assets\/[^"'\s]+\.js/);
+  const cssMatch = htmlRes.payload.match(/\/player\/assets\/[^"'\s]+\.css/);
+  assert.ok(jsMatch, 'Player HTML must reference compiled /player/assets/*.js');
+  assert.ok(cssMatch, 'Player HTML must reference compiled /player/assets/*.css');
+
+  const jsRes = await app.inject({ method: 'GET', url: jsMatch[0] });
+  assert.equal(jsRes.statusCode, 200);
+  assert.match(jsRes.headers['content-type'] ?? '', /javascript/);
+
+  const cssRes = await app.inject({ method: 'GET', url: cssMatch[0] });
+  assert.equal(cssRes.statusCode, 200);
+  assert.match(cssRes.headers['content-type'] ?? '', /text\/css/);
 });
 
 test('GET /tv returns lightweight legacy TV page', async () => {
@@ -34,7 +57,7 @@ test('GET /assets/* returns static assets with correct MIME types and cache head
   const cssRes = await app.inject({ method: 'GET', url: '/assets/style.css' });
   assert.equal(cssRes.statusCode, 200);
   assert.match(cssRes.headers['content-type'] ?? '', /text\/css/);
-  assert.match(cssRes.payload, /neon-pink/);
+  assert.match(cssRes.payload, /Instrument Serif/);
 
   const jsRes = await app.inject({ method: 'GET', url: '/assets/player.js' });
   assert.equal(jsRes.statusCode, 200);
@@ -133,8 +156,9 @@ test('GET /api/auth/config returns Supabase config', async () => {
   const res = await app.inject({ method: 'GET', url: '/api/auth/config' });
   assert.equal(res.statusCode, 200);
   const data = JSON.parse(res.payload);
-  assert.ok(data.supabaseUrl);
-  assert.ok(data.supabaseKey);
+  assert.equal(typeof data.supabaseUrl, 'string');
+  assert.equal(typeof data.supabaseKey, 'string');
+  assert.equal(data.supabaseServiceKey, undefined);
 });
 
 test('POST /api/user/claim-addon enforces anti-sybil and sets __rz_tracker cookie', async () => {
@@ -319,6 +343,70 @@ test('Admin Console endpoints: auth, overview, provider toggling, and link revoc
     headers: { cookie: sessionCookie },
     payload: { id: 'monochrome', enabled: true },
   });
+
+  // 8. Toggle global freeze on & verify 503 enforcement, then restore
+  const freezeOnRes = await app.inject({
+    method: 'POST',
+    url: '/api/admin/freeze',
+    headers: { cookie: sessionCookie },
+    payload: { freeze: true },
+  });
+  assert.equal(freezeOnRes.statusCode, 200);
+  assert.equal(JSON.parse(freezeOnRes.payload).frozen, true);
+
+  const frozenSearch = await app.inject({ method: 'GET', url: '/search?q=test' });
+  assert.equal(frozenSearch.statusCode, 503);
+
+  const freezeOffRes = await app.inject({
+    method: 'POST',
+    url: '/api/admin/freeze',
+    headers: { cookie: sessionCookie },
+    payload: { freeze: false },
+  });
+  assert.equal(freezeOffRes.statusCode, 200);
+  assert.equal(JSON.parse(freezeOffRes.payload).frozen, false);
+});
+
+test('Dedicated split links (/p/arcod, /p/monochrome) manifests & real-time 30-day canonical cache', async () => {
+  for (const prefix of ['/p/arcod', '/p/monochrome']) {
+    const mRes = await app.inject({ method: 'GET', url: `${prefix}/manifest.json` });
+    assert.equal(mRes.statusCode, 200);
+    const manifest = JSON.parse(mRes.payload);
+    assert.deepEqual(manifest.resources, ['search', 'stream']);
+    assert.equal(manifest.allowDownloads, 0);
+  }
+
+  const { communityCache, buildCanonicalKey } = await import('../src/community-cache.js');
+  const arcodPubId = publicId({ upstreamId: 'arcod:track-4242', title: 'Midnight Lossless', artist: 'ReZen Band' }, config.idSecret);
+  const canonical = buildCanonicalKey('arcod:track-4242', '/p/arcod', 'LOSSLESS');
+
+  const saved = communityCache.setStream(
+    arcodPubId,
+    {
+      url: 'https://example.com/split-4242.flac',
+      format: 'flac',
+      quality: 'LOSSLESS',
+      encrypted: false,
+      manifest: 'none',
+    },
+    'Midnight Lossless',
+    'ReZen Band',
+    { canonicalKey: canonical, provider: 'arcod', quality: 'LOSSLESS', routePrefix: '/p/arcod', deliveryMode: 'json' },
+  );
+
+  // Lookup from root Master route canonical key matches split link's canonical cache entry!
+  const hitFromMaster = await communityCache.getStreamAsync(arcodPubId, buildCanonicalKey('arcod:track-4242', '', 'LOSSLESS'));
+  assert.ok(hitFromMaster, 'Canonical key must bridge Master and /p/arcod split route');
+  communityCache.recordCachedPlay(hitFromMaster, '/p/arcod', 'audio-proxy');
+
+  assert.ok(saved.expiresAt > Date.now() + 29 * 24 * 60 * 60 * 1000, 'Cache retention must be ~30 days');
+
+  const commRes = await app.inject({ method: 'GET', url: '/api/community' });
+  assert.equal(commRes.statusCode, 200);
+  const comm = JSON.parse(commRes.payload);
+  assert.equal(comm.retentionDays, 30);
+  assert.ok(comm.recentPlays.some((p: any) => p.title === 'Midnight Lossless' && p.routePrefix === '/p/arcod'));
+  assert.ok((comm.providerBreakdown.arcod ?? 0) >= 1);
 });
 
 test('Direct Auth endpoints: providers, guest session, and me', async () => {

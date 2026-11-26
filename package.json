@@ -10,6 +10,7 @@
   },
   "scripts": {
     "prebuild": "node scripts/build-assets.js",
+    "build:player": "cd player-web && npm run build",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/src/server.js",
     "dev": "tsx watch src/server.ts",

@@ -2,3 +2,5 @@ node_modules/
 dist/
 .env
 npm-debug.log*
+.rezen-cache/
+player-web/node_modules/

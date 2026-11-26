@@ -1,225 +1,579 @@
-/**
- * ReZenOnance Nightly · 80s Pop Reactive Application Controller
- * Handles SPA navigation, Universal Link copying, Provider hub, Jukebox telemetry, and Search
- */
+/* ReZenOnance Obsidian Portal Controller — real-time community polling, theme sync, links & audition */
+(function () {
+  var THEME_KEY = 'rezenonance:theme';
+  var origin = window.location.origin;
 
-(function(window) {
-  'use strict';
+  var URLS = {
+    master: origin + '/manifest.json',
+    arcod: origin + '/p/arcod/manifest.json',
+    monochrome: origin + '/p/monochrome/manifest.json',
+  };
 
-  var currentView = 'station';
+  var personalManifestUrl = '';
+  var auditionAudio = new Audio();
+  auditionAudio.crossOrigin = 'anonymous';
+  var activePreviewTrack = null;
 
-  window.switchView = function(viewId) {
-    currentView = viewId;
+  function $(id) {
+    return document.getElementById(id);
+  }
 
-    // Toggle views
-    document.querySelectorAll('.app-view').forEach(function(view) {
-      view.classList.remove('active');
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function formatTime(secs) {
+    var total = Math.max(0, Math.floor(Number(secs) || 0));
+    var m = Math.floor(total / 60);
+    var s = total % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function formatRelative(ts) {
+    var diffSec = Math.max(0, Math.floor((Date.now() - Number(ts || 0)) / 1000));
+    if (diffSec < 12) return 'just now';
+    if (diffSec < 60) return diffSec + 's ago';
+    var mins = Math.floor(diffSec / 60);
+    if (mins < 60) return mins + 'm ago';
+    var hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + 'h ago';
+    return Math.floor(hrs / 24) + 'd ago';
+  }
+
+  function showToast(msg) {
+    var el = $('portal-toast');
+    if (!el) return;
+    el.textContent = msg;
+    el.hidden = false;
+    clearTimeout(el._timer);
+    el._timer = setTimeout(function () {
+      el.hidden = true;
+    }, 2600);
+  }
+
+  function setTheme(theme) {
+    if (theme !== 'aurora' && theme !== 'sunset' && theme !== 'noir' && theme !== 'mono') return;
+    document.documentElement.setAttribute('data-theme', theme);
+    var stage = $('portal-stage');
+    if (stage) stage.setAttribute('data-theme', theme);
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch (e) {}
+    document.querySelectorAll('[data-theme-btn]').forEach(function (btn) {
+      btn.classList.toggle('is-active', btn.getAttribute('data-theme-btn') === theme);
     });
-    var targetView = document.getElementById('view-' + viewId);
-    if (targetView) targetView.classList.add('active');
+  }
 
-    // Toggle bottom dock items
-    document.querySelectorAll('.dock-item-btn').forEach(function(btn) {
-      btn.classList.remove('active');
+  function switchView(name) {
+    document.querySelectorAll('[data-nav]').forEach(function (btn) {
+      btn.classList.toggle('is-active', btn.getAttribute('data-nav') === name);
     });
-    var targetBtn = document.getElementById('dock-btn-' + viewId);
-    if (targetBtn) targetBtn.classList.add('active');
 
-    // Sync hash
-    if (window.history && window.history.replaceState) {
-      window.history.replaceState(null, '', '#' + viewId);
+    var sections = document.querySelectorAll('[data-section]');
+    sections.forEach(function (sec) {
+      var kind = sec.getAttribute('data-section');
+      if (name === 'home') {
+        sec.hidden = false;
+      } else {
+        sec.hidden = kind !== name;
+      }
+    });
+  }
+
+  function copyText(url, label) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(
+        function () {
+          showToast(label + ' copied');
+        },
+        function () {
+          window.prompt('Copy URL:', url);
+        }
+      );
+    } else {
+      window.prompt('Copy URL:', url);
     }
-
-    if (viewId === 'jukebox') {
-      fetchCommunityTelemetry();
-    }
-  };
-
-  // Restore view from URL hash
-  var initialHash = window.location.hash.replace('#', '');
-  if (['station', 'providers', 'jukebox', 'studio'].indexOf(initialHash) !== -1) {
-    window.switchView(initialHash);
   }
 
-  // --- Universal Link Management ---
-  function getMasterManifestUrl() {
-    return window.location.origin + '/manifest.json';
+  function copyMasterLink() {
+    copyText(URLS.master, 'Universal Master Link');
   }
 
-  function getProviderManifestUrl(slug) {
-    return window.location.origin + '/p/' + slug + '/manifest.json';
+  function copySplitLink(path, label) {
+    copyText(origin + path, label || 'Split Link');
   }
 
-  function updateLinkDisplay() {
-    var masterInput = document.getElementById('master-link-input');
-    if (masterInput) masterInput.value = getMasterManifestUrl();
-    var bitchordBtn = document.getElementById('bitchord-install-link');
-    if (bitchordBtn) bitchordBtn.href = 'bitchord://install-addon?url=' + encodeURIComponent(getMasterManifestUrl());
+  function openBitChord(kind) {
+    var target = kind === 'personal' ? personalManifestUrl : URLS[kind] || URLS.master;
+    if (!target) return showToast('Mint a personal link first');
+    window.location.href = 'bitchord://addon/' + encodeURIComponent(target);
   }
-  updateLinkDisplay();
 
-  window.copyMasterLink = function() {
-    var url = getMasterManifestUrl();
-    navigator.clipboard.writeText(url).then(function() {
-      var btn = document.getElementById('copy-master-btn-text');
-      if (btn) btn.innerText = 'Copied to Clipboard!';
-      setTimeout(function() { if (btn) btn.innerText = 'Copy Universal Link'; }, 2200);
-    }).catch(function() {
-      prompt('Copy your Universal Addon URL:', url);
-    });
-  };
+  function toggleQrModal(kind) {
+    var target = kind === 'personal' ? personalManifestUrl : URLS[kind] || URLS.master;
+    if (!target) return;
+    $('qr-url-label').textContent = target;
+    $('qr-image').src =
+      'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=1&data=' + encodeURIComponent(target);
+    $('qr-modal').hidden = false;
+  }
 
-  window.copyProviderLink = function(providerSlug, buttonId) {
-    var url = getProviderManifestUrl(providerSlug);
-    navigator.clipboard.writeText(url).then(function() {
-      var btn = document.getElementById(buttonId);
-      if (btn) btn.innerText = 'Copied!';
-      setTimeout(function() { if (btn) btn.innerText = 'Copy Addon Link'; }, 2200);
-    }).catch(function() {
-      prompt('Copy Provider Addon URL:', url);
-    });
-  };
+  function closeQrModal() {
+    $('qr-modal').hidden = true;
+  }
 
-  // --- QR Code Modal ---
-  window.openQrModal = function(customUrl) {
-    var url = customUrl || getMasterManifestUrl();
-    var qrImg = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(url) + '&margin=8&color=120e24" alt="QR" style="border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.6);">';
-    var box = document.getElementById('qr-code-target');
-    if (box) box.innerHTML = qrImg;
-    var urlText = document.getElementById('qr-url-text');
-    if (urlText) urlText.innerText = url;
-    var modal = document.getElementById('qr-modal');
-    if (modal) modal.classList.add('open');
-  };
+  function hydrateUrls() {
+    if ($('master-url-text')) $('master-url-text').textContent = URLS.master;
+    if ($('arcod-url-text')) $('arcod-url-text').textContent = URLS.arcod;
+    if ($('monochrome-url-text')) $('monochrome-url-text').textContent = URLS.monochrome;
+  }
 
-  window.closeQrModal = function() {
-    var modal = document.getElementById('qr-modal');
-    if (modal) modal.classList.remove('open');
-  };
+  function refreshTelemetry() {
+    fetch('/api/telemetry')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data || !Array.isArray(data.sources)) return;
+        var up = data.sources.filter(function (s) { return s.status === 'operational'; }).length;
+        var pill = $('upstream-health-pill');
+        if (pill) pill.textContent = up + '/' + data.sources.length + ' clusters online';
 
-  // --- Community Jukebox Telemetry ---
-  function fetchCommunityTelemetry() {
-    fetch('/api/community')
-      .then(function(res) { return res.json(); })
-      .then(function(data) {
-        var cachedStreamsEl = document.getElementById('stat-cached-streams');
-        var cacheHitsEl = document.getElementById('stat-cache-hits');
-        var mbSavedEl = document.getElementById('stat-mb-saved');
-        var hitRatioEl = document.getElementById('stat-hit-ratio');
-
-        if (cachedStreamsEl) cachedStreamsEl.innerText = data.cachedStreamsCount || 0;
-        if (cacheHitsEl) cacheHitsEl.innerText = data.totalHits || 0;
-        if (mbSavedEl) mbSavedEl.innerText = (data.estimatedMbSaved || 0) + ' MB';
-
-        var totalReqs = (data.totalHits || 0) + (data.totalMisses || 0);
-        var ratio = totalReqs > 0 ? Math.round((data.totalHits / totalReqs) * 100) : 100;
-        if (hitRatioEl) hitRatioEl.innerText = ratio + '%';
-
-        // Render popular cached songs
-        var tableBody = document.getElementById('top-songs-table-body');
-        if (tableBody) {
-          if (!data.topCachedTracks || data.topCachedTracks.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:18px;">Community cache warming up. Listen to tracks to populate!</td></tr>';
-            return;
+        data.sources.forEach(function (src) {
+          var lower = String(src.name || '').toLowerCase();
+          var key = lower.indexOf('monochrome') >= 0 ? 'monochrome' : (lower.indexOf('arcod') >= 0 || lower.indexOf('instable') >= 0 ? 'arcod' : '');
+          var badge = key ? $('badge-' + key) : null;
+          if (badge) {
+            badge.textContent = src.status === 'operational'
+              ? (src.latency ? 'Online · ' + src.latency + 'ms' : 'Online')
+              : 'Paused';
           }
-          var html = '';
-          data.topCachedTracks.forEach(function(song, i) {
-            var displayTitle = (song.title && song.title !== 'Unknown Track') ? song.title : 'Lossless Track #' + (i + 1);
-            var displayArtist = (song.artist && song.artist !== 'Unknown Artist') ? song.artist : 'Qobuz Studio Master';
-            html += '<tr style="cursor:pointer;" onclick="playCachedSong(' + i + ')" title="Click to listen in Studio">' +
-              '<td style="font-family:\'JetBrains Mono\';color:var(--neon-pink);font-weight:800;">#' + (i + 1) + '</td>' +
-              '<td style="font-weight:700;color:#fff;">' + displayTitle + '</td>' +
-              '<td style="color:var(--text-muted);">' + displayArtist + '</td>' +
-              '<td style="font-family:\'JetBrains Mono\';color:var(--neon-mint);font-weight:800;">⚡ ' + song.hits + ' hits</td>' +
-            '</tr>';
-          });
-          tableBody.innerHTML = html;
-          window._cachedTopSongs = data.topCachedTracks;
-        }
+        });
       })
-      .catch(function(err) {
-        console.warn('Community telemetry error:', err);
+      .catch(function () {});
+  }
+
+  function refreshCommunity(manual) {
+    fetch('/api/community', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data) return;
+        var tracksCount = Number(data.cachedStreamsCount || 0);
+        var hitsCount = Number(data.totalHits || 0);
+        var missesCount = Number(data.totalMisses || 0);
+        var savedMb = Number(data.estimatedMbSaved || 0);
+        var totalPlays = Number(data.totalPlays || (hitsCount + missesCount));
+        var hitRatio = hitsCount + missesCount > 0
+          ? Math.round((hitsCount / (hitsCount + missesCount)) * 100)
+          : (totalPlays > 0 && tracksCount > 0 ? Math.min(100, Math.round((hitsCount / totalPlays) * 100)) : 0);
+
+        if ($('metric-cached-tracks')) $('metric-cached-tracks').textContent = tracksCount.toLocaleString();
+        if ($('metric-cache-hits')) $('metric-cache-hits').textContent = hitsCount.toLocaleString();
+        if ($('metric-saved-mb')) $('metric-saved-mb').textContent = savedMb.toLocaleString() + ' MB';
+        if ($('metric-hit-ratio')) $('metric-hit-ratio').textContent = hitRatio + '%';
+        if ($('metric-total-plays')) $('metric-total-plays').textContent = totalPlays.toLocaleString() + ' logged plays';
+
+        if ($('hero-stat-cached')) $('hero-stat-cached').textContent = tracksCount + ' cached streams';
+        if ($('hero-stat-hits')) $('hero-stat-hits').textContent = hitsCount + ' shared hits';
+
+        var mode = data.persistenceBackend || 'disk+memory';
+        var days = data.retentionDays || 30;
+        var backendLabel =
+          mode === 'upstash-redis'
+            ? 'Upstash Redis · ' + days + 'd persistent'
+            : mode === 'supabase'
+              ? 'Supabase DB · ' + days + 'd persistent'
+              : 'L1 Disk+Memory · ' + days + 'd TTL';
+
+        if ($('cache-persistence-badge')) $('cache-persistence-badge').textContent = backendLabel;
+        if ($('hero-backend-pill')) $('hero-backend-pill').textContent = backendLabel;
+
+        renderRouteBreakdown(data.providerBreakdown || {});
+        renderRecentPlays(data.recentPlays || []);
+        renderTopCached(data.topCachedTracks || []);
+
+        if (manual) showToast('Community cache synced');
+      })
+      .catch(function () {});
+  }
+
+  function renderRouteBreakdown(breakdown) {
+    var wrap = $('route-pills');
+    if (!wrap) return;
+    var entries = Object.keys(breakdown);
+    if (entries.length === 0) {
+      wrap.innerHTML = '<span class="status-pill">Waiting for first stream event…</span>';
+      return;
+    }
+    wrap.innerHTML = entries
+      .map(function (route) {
+        return (
+          '<span class="status-pill">' +
+          escapeHtml(route) +
+          ': <strong>' +
+          Number(breakdown[route] || 0) +
+          '</strong></span>'
+        );
+      })
+      .join('');
+  }
+
+  function renderRecentPlays(plays) {
+    var container = $('recent-plays-feed');
+    if (!container) return;
+    if (!plays || plays.length === 0) {
+      container.innerHTML = '<p class="empty-note">No live streams logged yet. Play from Search or any BitChord link.</p>';
+      return;
+    }
+    container.innerHTML = plays
+      .slice(0, 24)
+      .map(function (item) {
+        var tagCls = item.cacheHit ? 'pill tag-hit' : 'pill tag-live';
+        var tagTxt = item.cacheHit ? 'CACHE HIT' : 'LIVE';
+        return (
+          '<div class="feed-item">' +
+          '<div class="feed-item__info">' +
+          '<span class="feed-item__title">' + escapeHtml(item.title) + '</span>' +
+          '<span class="feed-item__meta">' +
+          escapeHtml(item.artist) +
+          ' · ' +
+          escapeHtml(item.routePrefix || item.route || '/') +
+          (item.deliveryMode ? ' (' + escapeHtml(item.deliveryMode) + ')' : '') +
+          ' · ' +
+          formatRelative(item.playedAt) +
+          '</span>' +
+          '</div>' +
+          '<div class="feed-item__tags">' +
+          '<span class="' + tagCls + '">' + tagTxt + '</span>' +
+          '<button class="btn btn--ghost btn--sm" data-play-id="' + escapeHtml(item.id) + '" data-play-title="' + escapeHtml(item.title) + '" data-play-artist="' + escapeHtml(item.artist) + '" data-play-art="' + escapeHtml(item.artworkURL || '') + '">Play</button>' +
+          '</div>' +
+          '</div>'
+        );
+      })
+      .join('');
+    bindPlayButtons(container);
+  }
+
+  function renderTopCached(tracks) {
+    var container = $('top-cached-table');
+    if (!container) return;
+    if (!tracks || tracks.length === 0) {
+      container.innerHTML = '<p class="empty-note">No cached streams yet. Play any track to seed the 30-day cache.</p>';
+      return;
+    }
+    container.innerHTML = tracks
+      .slice(0, 15)
+      .map(function (track) {
+        var art = track.artworkURL
+          ? '<img src="' + escapeHtml(track.artworkURL) + '" alt="" loading="lazy" />'
+          : escapeHtml((track.title || 'R').slice(0, 2).toUpperCase());
+        return (
+          '<div class="track-row">' +
+          '<div class="track-row__art">' + art + '</div>' +
+          '<div class="track-row__main">' +
+          '<span class="track-row__title">' + escapeHtml(track.title) + '</span>' +
+          '<span class="track-row__artist">' + escapeHtml(track.artist) + '</span>' +
+          '</div>' +
+          '<span class="track-row__badge">' + escapeHtml((track.provider || track.format || 'flac').toUpperCase()) + '</span>' +
+          '<span class="track-row__hits">' + Number(track.hits || 0) + ' hits</span>' +
+          '<button class="btn btn--ghost btn--sm" data-play-id="' + escapeHtml(track.id) + '" data-play-title="' + escapeHtml(track.title) + '" data-play-artist="' + escapeHtml(track.artist) + '" data-play-art="' + escapeHtml(track.artworkURL || '') + '">Play</button>' +
+          '</div>'
+        );
+      })
+      .join('');
+    bindPlayButtons(container);
+  }
+
+  function bindPlayButtons(scope) {
+    scope.querySelectorAll('[data-play-id]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        playPreview({
+          id: btn.getAttribute('data-play-id'),
+          title: btn.getAttribute('data-play-title') || 'Unknown Track',
+          artist: btn.getAttribute('data-play-artist') || 'Unknown Artist',
+          album: btn.getAttribute('data-play-album') || '',
+          artworkURL: btn.getAttribute('data-play-art') || '',
+        });
+      });
+    });
+  }
+
+  function buildMetaQuery(track) {
+    var qs = 'quality=LOSSLESS';
+    if (track.title) qs += '&title=' + encodeURIComponent(track.title);
+    if (track.artist) qs += '&artist=' + encodeURIComponent(track.artist);
+    if (track.album) qs += '&album=' + encodeURIComponent(track.album);
+    if (track.artworkURL) qs += '&artwork=' + encodeURIComponent(track.artworkURL);
+    return qs;
+  }
+
+  function playPreview(track) {
+    if (!track || !track.id) return;
+    activePreviewTrack = track;
+    var routePrefix = ($('portal-route-select') && $('portal-route-select').value) || '';
+    var mini = $('mini-player');
+    mini.hidden = false;
+    $('mini-title').textContent = track.title;
+    $('mini-artist').textContent = track.artist;
+    $('mini-art').innerHTML = track.artworkURL
+      ? '<img src="' + escapeHtml(track.artworkURL) + '" alt="" />'
+      : '';
+    $('mini-open-player').href =
+      '/player?id=' +
+      encodeURIComponent(track.id) +
+      '&title=' +
+      encodeURIComponent(track.title || '') +
+      '&artist=' +
+      encodeURIComponent(track.artist || '') +
+      (track.artworkURL ? '&artwork=' + encodeURIComponent(track.artworkURL) : '');
+
+    var qs = buildMetaQuery(track);
+    var streamEndpoint = routePrefix + '/stream/' + encodeURIComponent(track.id) + '?' + qs;
+    var fallback = origin + routePrefix + '/stream/' + encodeURIComponent(track.id) + '/audio?' + qs;
+    fetch(streamEndpoint)
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var direct = data && (data.url || (data.stream && data.stream.url)) ? (data.url || data.stream.url) : '';
+        startAudioWithFallback(direct || fallback, fallback);
+        setTimeout(function () { refreshCommunity(false); }, 800);
+      })
+      .catch(function () {
+        startAudioWithFallback(fallback, fallback);
       });
   }
 
-  window.playCachedSong = function(index) {
-    if (!window._cachedTopSongs || !window._cachedTopSongs[index]) return;
-    var item = window._cachedTopSongs[index];
-    if (window.ReZenPlayer) {
-      window.ReZenPlayer.enqueue({
-        id: item.id,
-        title: (item.title && item.title !== 'Unknown Track') ? item.title : 'Lossless Track #' + (index + 1),
-        artist: (item.artist && item.artist !== 'Unknown Artist') ? item.artist : 'Qobuz Studio Master'
-      }, true);
-      switchView('studio');
-    }
-  };
+  function startAudioWithFallback(primaryUrl, fallbackUrl) {
+    var retried = false;
+    auditionAudio.onerror = function () {
+      if (!retried && fallbackUrl && auditionAudio.src !== fallbackUrl) {
+        retried = true;
+        auditionAudio.src = fallbackUrl;
+        auditionAudio.play().catch(function () {});
+      }
+    };
+    auditionAudio.src = primaryUrl;
+    auditionAudio.play().then(syncMiniState).catch(function () {
+      if (!retried && fallbackUrl) {
+        retried = true;
+        auditionAudio.src = fallbackUrl;
+        auditionAudio.play().then(syncMiniState).catch(function () {});
+      }
+    });
+  }
 
-  // --- Search Engine ---
-  var currentSearchResults = [];
+  function syncMiniState() {
+    var icon = $('mini-play-icon');
+    if (!icon) return;
+    icon.innerHTML = auditionAudio.paused
+      ? '<path d="M8 5.4v13.2L19 12z"/>'
+      : '<rect x="7.5" y="5" width="3.5" height="14" rx="1"/><rect x="13" y="5" width="3.5" height="14" rx="1"/>';
+  }
 
-  window.handleSearch = function(e) {
-    if (e && e.preventDefault) e.preventDefault();
-    var input = document.getElementById('search-query-field');
-    var q = input ? input.value.trim() : '';
-    if (!q) return false;
+  function toggleMiniPlay() {
+    if (!activePreviewTrack) return;
+    if (auditionAudio.paused) auditionAudio.play().catch(function () {});
+    else auditionAudio.pause();
+    syncMiniState();
+  }
 
-    var statusEl = document.getElementById('search-feedback-text');
-    var listEl = document.getElementById('search-results-list');
-    if (statusEl) statusEl.innerHTML = '<span style="color:var(--neon-cyan);">Racing upstream lossless nodes for "' + q + '"...</span>';
-    if (listEl) listEl.innerHTML = '';
+  function stopMiniPlayer() {
+    auditionAudio.pause();
+    auditionAudio.removeAttribute('src');
+    $('mini-player').hidden = true;
+  }
 
-    fetch('/search?q=' + encodeURIComponent(q) + '&quality=LOSSLESS')
-      .then(function(res) { return res.json(); })
-      .then(function(data) {
-        currentSearchResults = data.tracks || [];
-        if (!currentSearchResults.length) {
-          if (statusEl) statusEl.innerText = 'No lossless tracks found. Try Daft Punk, Inertia AJR, or Pink Floyd.';
-          return;
-        }
-        if (statusEl) statusEl.innerHTML = 'Found <strong>' + currentSearchResults.length + ' tracks</strong>. Playing directly caches bitstreams for the community!';
-
-        var html = '';
-        currentSearchResults.forEach(function(t, i) {
-          var cover = t.artworkURL || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&auto=format&fit=crop';
-          var artist = t.artist || t.album || 'Lossless Master';
-          html += '<div style="background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:16px;padding:12px;display:flex;align-items:center;gap:14px;transition:all 0.2s ease;">' +
-            '<img src="' + cover + '" alt="Cover" style="width:48px;height:48px;border-radius:10px;object-fit:cover;" loading="lazy">' +
-            '<div style="flex:1;min-width:0;">' +
-              '<div style="font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (t.title || 'Track') + '</div>' +
-              '<div style="font-size:12px;color:var(--neon-gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + artist + '</div>' +
-            '</div>' +
-            '<div style="display:flex;gap:6px;">' +
-              '<button class="chip-action" onclick="window.player.playTrack(currentSearchResults[' + i + '])" style="background:rgba(255,42,122,0.18);border-color:var(--neon-pink);color:#fff;" title="Play now">' +
-                '▶ Play' +
-              '</button>' +
-              '<button class="chip-action" onclick="window.player.addToQueue(currentSearchResults[' + i + '])" title="Add to Queue">' +
-                '+ Queue' +
-              '</button>' +
-            '</div>' +
-          '</div>';
-        });
-        if (listEl) listEl.innerHTML = html;
-      })
-      .catch(function(err) {
-        if (statusEl) statusEl.innerText = 'Search error: ' + err.message;
-      });
-    return false;
-  };
-
-  window.quickSearch = function(query) {
-    var input = document.getElementById('search-query-field');
-    if (input) {
-      input.value = query;
-      window.handleSearch();
-    }
-  };
-
-  // Initialize Equalizer UI & Player
-  document.addEventListener('DOMContentLoaded', function() {
-    if (window.player && window.player.initEqUI) {
-      window.player.initEqUI();
+  auditionAudio.addEventListener('timeupdate', function () {
+    var dur = Number(auditionAudio.duration) || 0;
+    var cur = Number(auditionAudio.currentTime) || 0;
+    if ($('mini-time-cur')) $('mini-time-cur').textContent = formatTime(cur);
+    if ($('mini-time-dur')) $('mini-time-dur').textContent = formatTime(dur);
+    if ($('mini-bar-fill')) {
+      $('mini-bar-fill').style.width = dur > 0 ? Math.min(100, (cur / dur) * 100) + '%' : '0%';
     }
   });
+  auditionAudio.addEventListener('play', syncMiniState);
+  auditionAudio.addEventListener('pause', syncMiniState);
 
-})(window);
+  function quickSearch(q) {
+    var input = $('portal-search-input');
+    if (!input) return;
+    input.value = q;
+    runPortalSearch();
+  }
+
+  function runPortalSearch() {
+    var input = $('portal-search-input');
+    var routePrefix = ($('portal-route-select') && $('portal-route-select').value) || '';
+    var q = input ? input.value.trim() : '';
+    if (!q) return showToast('Enter a search query');
+    var btn = $('portal-search-btn');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Searching…';
+    }
+    fetch(routePrefix + '/search?q=' + encodeURIComponent(q) + '&quality=LOSSLESS')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var wrap = $('audition-results-wrap');
+        var list = $('audition-results-list');
+        var tracks = (data && (data.tracks || data.results)) || [];
+        wrap.hidden = false;
+        if (tracks.length === 0) {
+          list.innerHTML = '<p class="empty-note">No tracks matched on this route.</p>';
+          return;
+        }
+        list.innerHTML = tracks
+          .slice(0, 12)
+          .map(function (t) {
+            var art = t.artworkURL
+              ? '<img src="' + escapeHtml(t.artworkURL) + '" alt="" loading="lazy" />'
+              : 'FLAC';
+            var qLink =
+              '/player?id=' +
+              encodeURIComponent(t.id) +
+              '&title=' +
+              encodeURIComponent(t.title || '') +
+              '&artist=' +
+              encodeURIComponent(t.artist || '') +
+              (t.album ? '&album=' + encodeURIComponent(t.album) : '') +
+              (t.artworkURL ? '&artwork=' + encodeURIComponent(t.artworkURL) : '');
+            return (
+              '<div class="track-row">' +
+              '<div class="track-row__art">' + art + '</div>' +
+              '<div class="track-row__main">' +
+              '<span class="track-row__title">' + escapeHtml(t.title) + '</span>' +
+              '<span class="track-row__artist">' + escapeHtml(t.artist) + '</span>' +
+              '</div>' +
+              '<span class="track-row__badge">' + escapeHtml((t.provider || 'lossless').toUpperCase()) + '</span>' +
+              '<a href="' + qLink + '" class="btn btn--plain btn--sm">In /player</a>' +
+              '<button class="btn btn--solid btn--sm" data-play-id="' + escapeHtml(t.id) + '" data-play-title="' + escapeHtml(t.title) + '" data-play-artist="' + escapeHtml(t.artist) + '" data-play-album="' + escapeHtml(t.album || '') + '" data-play-art="' + escapeHtml(t.artworkURL || '') + '">Play</button>' +
+              '</div>'
+            );
+          })
+          .join('');
+        bindPlayButtons(list);
+      })
+      .catch(function () {
+        showToast('Search failed upstream');
+      })
+      .finally(function () {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Search';
+        }
+      });
+  }
+
+  function loadSessionGateway() {
+    fetch('/api/auth/me')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data && data.authenticated && data.addon && data.addon.slug) {
+          setPersonalGateway(data.addon.slug);
+        }
+      })
+      .catch(function () {});
+  }
+
+  function setPersonalGateway(slug) {
+    personalManifestUrl = origin + '/u/' + encodeURIComponent(slug) + '/manifest.json';
+    if ($('personal-url-text')) $('personal-url-text').textContent = personalManifestUrl;
+    if ($('personal-status-tag')) $('personal-status-tag').textContent = 'Active · ' + slug;
+    if ($('personal-actions')) {
+      $('personal-actions').innerHTML =
+        '<button class="btn btn--solid btn--sm" onclick="copySplitLink(\'/u/' + encodeURIComponent(slug) + '/manifest.json\', \'Personal Gateway\')">Copy Gateway Link</button>' +
+        '<button class="btn btn--ghost btn--sm" onclick="openBitChord(\'personal\')">BitChord</button>';
+    }
+  }
+
+  function mintGuestGateway() {
+    fetch('/api/auth/guest', { method: 'POST' })
+      .then(function (r) { return r.json(); })
+      .then(function (session) {
+        if (!session || !session.user || !session.user.email) throw new Error('Guest session error');
+        return fetch('/api/user/claim-addon', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: session.user.email }),
+        });
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (res && res.addon && res.addon.addon_slug) {
+          setPersonalGateway(res.addon.addon_slug);
+          showToast('Guest gateway minted');
+        }
+      })
+      .catch(function () {
+        showToast('Could not mint guest gateway');
+      });
+  }
+
+  function openClaimPrompt() {
+    var email = window.prompt('Enter your permanent email to claim a personal gateway slug:');
+    if (!email) return;
+    fetch('/api/user/claim-addon', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim() }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (res && res.addon && res.addon.addon_slug) {
+          setPersonalGateway(res.addon.addon_slug);
+          showToast('Personal gateway active');
+        } else {
+          showToast(res.error || 'Claim failed');
+        }
+      })
+      .catch(function () {
+        showToast('Claim request failed');
+      });
+  }
+
+  window.switchView = switchView;
+  window.setTheme = setTheme;
+  window.copyMasterLink = copyMasterLink;
+  window.copySplitLink = copySplitLink;
+  window.openBitChord = openBitChord;
+  window.toggleQrModal = toggleQrModal;
+  window.closeQrModal = closeQrModal;
+  window.refreshCommunity = refreshCommunity;
+  window.runPortalSearch = runPortalSearch;
+  window.quickSearch = quickSearch;
+  window.toggleMiniPlay = toggleMiniPlay;
+  window.stopMiniPlayer = stopMiniPlayer;
+  window.mintGuestGateway = mintGuestGateway;
+  window.openClaimPrompt = openClaimPrompt;
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var savedTheme = 'aurora';
+    try {
+      var stored = localStorage.getItem(THEME_KEY);
+      if (stored === 'aurora' || stored === 'sunset' || stored === 'noir' || stored === 'mono') {
+        savedTheme = stored;
+      }
+    } catch (e) {}
+    setTheme(savedTheme);
+    hydrateUrls();
+    refreshTelemetry();
+    refreshCommunity(false);
+    loadSessionGateway();
+
+    var input = $('portal-search-input');
+    if (input) {
+      input.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          runPortalSearch();
+        }
+      });
+    }
+
+    setInterval(function () {
+      refreshCommunity(false);
+    }, 8000);
+  });
+})();

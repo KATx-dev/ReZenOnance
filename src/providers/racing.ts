@@ -101,7 +101,12 @@ export class RacingProvider implements QobuzProvider {
     if (separator > 0) {
       const sourceName = trackId.slice(0, separator);
       const upstreamId = trackId.slice(separator + 1);
-      const source = this.sources.find(candidate => (candidate.id === sourceName || candidate.name === sourceName));
+      const normalizedSourceName = sourceName === 'instable' ? 'arcod' : sourceName;
+      const source = this.sources.find(candidate => (
+        candidate.id === sourceName ||
+        candidate.id === normalizedSourceName ||
+        candidate.name === sourceName
+      ));
       if (source && source.enabled !== false) {
         const stream = await source.provider.getStream(upstreamId, quality, atmos);
         if (stream) return stream;
